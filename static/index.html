@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reel Pipeline</title>
+<style>
+  :root { --bg: #111418; --card: #1b2027; --text: #e6e8eb; --muted: #8b949e; --accent: #f5c518; --err: #f85149; --ok: #3fb950; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.4rem; margin: 8px 0 16px; }
+  h2 { font-size: 1rem; color: var(--muted); margin: 24px 0 8px; }
+  .card { background: var(--card); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input[type=file] { flex: 1; min-width: 0; color: var(--text); }
+  button { background: var(--accent); color: #000; border: 0; border-radius: 6px; padding: 8px 16px; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #msg { margin-top: 8px; color: var(--muted); min-height: 1.5em; }
+  #msg.err { color: var(--err); }
+  .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { font-size: .8rem; padding: 2px 8px; border-radius: 99px; background: #30363d; white-space: nowrap; }
+  .badge.done { background: var(--ok); color: #000; }
+  .badge.error { background: var(--err); color: #000; }
+  .badge.processing { background: var(--accent); color: #000; }
+  .error-text { color: var(--err); white-space: pre-wrap; font-size: .85rem; margin-top: 6px; }
+  video { display: block; width: 100%; max-height: 70vh; margin-top: 10px; background: #000; border-radius: 6px; }
+  a { color: var(--accent); display: inline-block; margin-top: 8px; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Reel Pipeline</h1>
+
+  <div class="card">
+    <form id="upload">
+      <input type="file" id="file" accept=".mp4,.mov,.mkv,.avi,.webm,video/*" required>
+      <button id="btn">Upload</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+
+  <h2>Jobs</h2>
+  <div id="jobs"><div class="empty">No jobs yet.</div></div>
+</main>
+
+<script>
+const form = document.getElementById('upload');
+const fileInput = document.getElementById('file');
+const btn = document.getElementById('btn');
+const msg = document.getElementById('msg');
+const jobsEl = document.getElementById('jobs');
+const cards = {};  // job id -> { el, state }
+
+function setMsg(text, isErr) {
+  msg.textContent = text;
+  msg.className = isErr ? 'err' : '';
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!fileInput.files.length) return;
+  const data = new FormData();
+  data.append('file', fileInput.files[0]);
+  btn.disabled = true;
+  setMsg('Uploading…');
+  try {
+    const res = await fetch('/upload', { method: 'POST', body: data });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.detail || `Upload failed (${res.status})`);
+    setMsg(`Uploaded. Job ${body.id} started.`);
+    form.reset();
+    poll();
+  } catch (err) {
+    setMsg(err.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+function renderJob(job) {
+  let entry = cards[job.id];
+  if (!entry) {
+    entry = cards[job.id] = { el: el('div', 'card'), state: null, step: null };
+  }
+  // Re-render only on change so a playing video is not reset.
+  if (entry.state === job.state && entry.step === job.step) return entry.el;
+  entry.state = job.state;
+  entry.step = job.step;
+
+  const card = entry.el;
+  card.replaceChildren();
+  const row = el('div', 'row');
+  row.append(el('span', 'name', job.filename || job.id));
+  const label = job.state === 'processing' && job.step ? `processing: ${job.step}` : job.state;
+  row.append(el('span', `badge ${job.state}`, label));
+  card.append(row);
+
+  if (job.state === 'error' && job.error) card.append(el('div', 'error-text', job.error));
+  if (job.state === 'done') {
+    const src = `/jobs/${job.id}/output`;
+    const video = el('video');
+    video.controls = true;
+    video.preload = 'metadata';
+    video.src = src;
+    const link = el('a', null, 'Download');
+    link.href = src;
+    link.download = '';
+    card.append(video, link);
+  }
+  return card;
+}
+
+async function poll() {
+  try {
+    const res = await fetch('/jobs');
+    if (!res.ok) return;
+    const jobs = await res.json();
+    if (!jobs.length) return;
+    jobsEl.replaceChildren(...jobs.map(renderJob));
+  } catch (_) { /* server down; try again next tick */ }
+}
+
+poll();
+setInterval(poll, 2000);
+</script>
+</body>
+</html>
