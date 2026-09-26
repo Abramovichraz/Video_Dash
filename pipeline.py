@@ -2,6 +2,7 @@
 
 import logging
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -9,8 +10,11 @@ log = logging.getLogger("pipeline")
 
 
 def run_ffmpeg(cmd: list[str]) -> None:
+    if shutil.which(cmd[0]) is None:
+        raise RuntimeError(f"{cmd[0]} not found on PATH. Install FFmpeg and restart the terminal.")
     log.info("running: %s", shlex.join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Explicit utf-8: Windows defaults to cp1252 and ffmpeg output can break it.
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         tail = "\n".join(result.stderr.strip().splitlines()[-20:])
         raise RuntimeError(f"ffmpeg failed (exit {result.returncode}):\n{tail}")

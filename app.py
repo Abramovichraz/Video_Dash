@@ -37,7 +37,15 @@ def write_status(status: dict) -> None:
     path = JOBS_DIR / status["id"] / "status.json"
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(status, indent=2))
-    os.replace(tmp, path)
+    # On Windows the replace fails while the poller has the file open; retry briefly.
+    for attempt in range(10):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if attempt == 9:
+                raise
+            time.sleep(0.05)
 
 
 def update_status(job_id: str, **changes) -> None:
