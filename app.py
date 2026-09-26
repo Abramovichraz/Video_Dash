@@ -7,6 +7,7 @@ import shutil
 import threading
 import time
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile
@@ -22,8 +23,6 @@ STATIC_DIR = Path(__file__).parent / "static"
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".mkv", ".avi", ".webm"}
 MAX_UPLOAD_BYTES = 4 * 1024**3
 CHUNK_SIZE = 1024**2
-
-app = FastAPI()
 
 
 def read_status(job_id: str) -> dict | None:
@@ -65,7 +64,6 @@ def run_job(job_id: str) -> None:
         update_status(job_id, state="error", error=str(e))
 
 
-@app.on_event("startup")
 def mark_interrupted_jobs() -> None:
     JOBS_DIR.mkdir(exist_ok=True)
     for status_file in JOBS_DIR.glob("*/status.json"):
@@ -73,6 +71,15 @@ def mark_interrupted_jobs() -> None:
         if status and status["state"] in ("queued", "processing"):
             status.update(state="error", error="interrupted by server restart")
             write_status(status)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    mark_interrupted_jobs()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/upload")
