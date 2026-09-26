@@ -54,6 +54,13 @@ const msg = document.getElementById('msg');
 const jobsEl = document.getElementById('jobs');
 const cards = {};  // job id -> { el, state }
 
+const SERVER_DOWN = 'Cannot reach the server. Start it with "uvicorn app:app --reload" and open http://localhost:8000';
+
+if (location.protocol === 'file:') {
+  // Opened by double-clicking index.html: the API is not available from a file:// page.
+  setMsg('Open the dashboard via http://localhost:8000, not as a file.', true);
+}
+
 function setMsg(text, isErr) {
   msg.textContent = text;
   msg.className = isErr ? 'err' : '';
@@ -74,7 +81,8 @@ form.addEventListener('submit', async (e) => {
     form.reset();
     poll();
   } catch (err) {
-    setMsg(err.message, true);
+    // fetch() throws a TypeError ("Failed to fetch") when the server can't be reached at all.
+    setMsg(err instanceof TypeError ? SERVER_DOWN : err.message, true);
   } finally {
     btn.disabled = false;
   }
