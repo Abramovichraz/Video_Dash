@@ -1,0 +1,4 @@
+# Rendered videos and job data stay local
+*.mp4
+!samples/clip1.mp4
+jobs/
