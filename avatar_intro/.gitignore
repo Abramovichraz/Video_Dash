@@ -1,0 +1,7 @@
+models/
+*.mp4
+*.mp3
+*.m4a
+*.wav
+*.png
+__pycache__/
