@@ -319,7 +319,11 @@
    ✏️ CONFIG — כאן עורכים הכל
    ========================================================= */
 const CONFIG = {
+  // השיר: בר צברי - ככה באמת
   youtubeId: 'Ze63vfpYAV4',
+  // אופציה אמינה יותר: שים קובץ mp3 של השיר בתיקייה (למשל 'song.mp3') וכתוב את השם כאן.
+  // אם מוגדר — הוא ינוגן במקום יוטיוב.
+  audioFile: '',
   musicStartSeconds: 0,          // מאיזו שנייה בשיר להתחיל
   secondsPerPhoto: 6,
 
@@ -329,15 +333,14 @@ const CONFIG = {
   // התמונות: שימו את הקבצים בתיקייה photos/ ועדכנו כאן את השמות והכיתובים
   photos: [
     { src: 'photos/1.jpg', caption: 'איפה שהכל התחיל' },
-    { src: 'photos/2.jpg', caption: 'הצחוק שלך' },
-    { src: 'photos/3.jpg', caption: 'כל רגע איתך' },
-    { src: 'photos/4.jpg', caption: 'היום שאמרנו כן' },
-    { src: 'photos/5.jpg', caption: 'ההרפתקאות שלנו' },
-    { src: 'photos/6.jpg', caption: 'ועוד אלף כאלה' },
+    { src: 'photos/2.jpg', caption: 'מחובקים, תמיד' },
+    { src: 'photos/3.jpg', caption: 'הפרצופים שלך 😘' },
+    { src: 'photos/4.jpg', caption: 'כל רגע קטן איתך' },
+    { src: 'photos/5.jpg', caption: 'הלילות שלנו' },
   ],
 
   finaleTitle: 'אני אוהב אותך',
-  finaleText: 'תודה על כל יום, על כל חיוך ועל הבית שבנינו יחד.\nיום נישואין שמח, אהובה שלי.',
+  finaleText: 'תודה רבה על האמונה והגב שאת נותנת לי.\nאני אוהב אותך הכי בעולם ❤\n\nיום נישואין שמח',
 };
 </script>
 
@@ -380,27 +383,39 @@ const CONFIG = {
       },
     });
   };
-  const tag = document.createElement('script');
-  tag.src = 'https://www.youtube.com/iframe_api';
-  document.head.appendChild(tag);
+  let audio = null;
+  if (CONFIG.audioFile) {
+    audio = new Audio(CONFIG.audioFile);
+    audio.loop = true; audio.preload = 'auto';
+    audio.currentTime = CONFIG.musicStartSeconds;
+    audio.onplaying = () => { $('tapMusic').style.display = 'none'; $('musicBtn').style.display = 'block'; };
+  } else {
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  }
 
   function playMusic() {
     wantPlay = true;
+    if (audio) { audio.play().catch(() => {}); return; }
     if (!playerReady) return;
     try { player.unMute(); player.setVolume(100); player.playVideo(); } catch (e) {}
+  }
+  function isPlaying() {
+    if (audio) return !audio.paused;
+    return playerReady && player.getPlayerState && player.getPlayerState() === YT.PlayerState.PLAYING;
   }
   // If the browser blocked autoplay, offer a one-tap fallback
   function checkMusicLater() {
     setTimeout(() => {
-      const playing = playerReady && player.getPlayerState && player.getPlayerState() === YT.PlayerState.PLAYING;
-      if (!playing) $('tapMusic').style.display = 'block';
+      if (!isPlaying()) $('tapMusic').style.display = 'block';
     }, 2500);
   }
   $('tapMusic').onclick = () => { playMusic(); $('tapMusic').style.display = 'none'; };
   $('musicBtn').onclick = () => {
-    if (!playerReady) return;
     muted = !muted;
-    muted ? player.mute() : player.unMute();
+    if (audio) audio.muted = muted;
+    else if (playerReady) muted ? player.mute() : player.unMute();
     $('musicBtn').textContent = muted ? '🔇' : '🔊';
   };
 
