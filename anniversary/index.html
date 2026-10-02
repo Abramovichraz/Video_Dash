@@ -7,12 +7,13 @@
 <meta property="og:title" content="יש לך מכתב 💌">
 <meta property="og:description" content="פתחי את המעטפה">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Rubik:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Rubik:wght@300;400&family=Amatic+SC:wght@700&display=swap" rel="stylesheet">
 <style>
   /* =========================================================
-     The whole show (envelope -> slides -> finale) runs on CSS alone,
-     driven by the #open checkbox, so it works even in previews that
-     block JavaScript. JS only adds music, sticker dragging and hearts.
+     The whole show (envelope -> film countdown -> polaroids -> finale)
+     runs on CSS alone, driven by the #open checkbox, so it works even in
+     previews that block JavaScript. JS only adds music, sticker dragging
+     and hearts.
      ✏️ תמונות וכיתובים: בתוך <section id="show"> למטה.
      ✏️ קצב: --d = שניות לכל תמונה, --n = מספר התמונות.
      ========================================================= */
@@ -27,10 +28,14 @@
     --seal-light: #d23a5e;
     --gold: #e9c27a;
     --ink: #4a1f2b;
+    --film: #1a110b;        /* the dark "table" the polaroids land on */
+    --polaroid: #f6f0e4;
+    --pen: #2c2340;         /* handwriting ink */
 
-    --d: 5.2s;      /* seconds per photo: 4.6s + 13 × 5.2s ≈ 72s, finale over the last 8s of the 80s song */
+    --d: 5s;        /* seconds per photo */
     --n: 13;        /* number of photos */
-    --intro: 4.6s;  /* envelope animation before the first photo */
+    --intro: 7.6s;  /* envelope (4.2s) + film countdown (3s) before the first photo; 7.6 + 13×5 ≈ 73s of the 80s song */
+    --hand: 'Amatic SC', 'Suez One', 'Arial Hebrew', cursive;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
@@ -167,88 +172,206 @@
     opacity: 0; pointer-events: none;
   }
 
-  /* ---------- slideshow: each slide fades in over the previous one ---------- */
+  /* ---------- the show: old film countdown, then polaroids dropping onto a pile ---------- */
   #show {
     position: fixed; inset: 0; z-index: 3;
     opacity: 0; visibility: hidden;
-    background: #000;
-    transition: opacity 1.5s ease, visibility 0s 1.5s;
+    background: radial-gradient(ellipse at 50% 40%, #3a2418, var(--film) 75%) var(--film);
+    transition: opacity .6s ease, visibility 0s .6s;
   }
   #open:checked ~ #show { opacity: 1; visibility: visible; transition-delay: 4.2s, 0s; }
+
+  /* film leader 3-2-1 */
+  .leader {
+    position: absolute; inset: 0; z-index: 50;
+    display: grid; place-items: center;
+    background: radial-gradient(circle, #dcc8a0, #8f7654 80%);
+  }
+  #open:checked ~ #show .leader { animation: leaderOut .5s ease 7.2s both; }
+  @keyframes leaderOut { to { opacity: 0; visibility: hidden; } }
+  .ring {
+    width: min(72vw, 52vh); aspect-ratio: 1; max-width: 100%;
+    border-radius: 50%; border: 3px solid #2a1d12;
+    position: relative; overflow: hidden;
+  }
+  .ring::before { content: ""; position: absolute; inset: 11%; border-radius: 50%; border: 2px solid #2a1d12; }
+  .ring::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(#2a1d12, #2a1d12) center / 2px 100% no-repeat,
+      linear-gradient(#2a1d12, #2a1d12) center / 100% 2px no-repeat;
+    opacity: .7;
+  }
+  .sweep {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(rgba(42,29,18,.38) 0 0deg, transparent 0deg 270deg, rgba(42,29,18,.38) 270deg);
+  }
+  #open:checked ~ #show .sweep { animation: spin 1s linear 4.6s 3; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .num {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-family: 'Suez One', 'Arial Hebrew', serif; font-size: min(36vw, 26vh); color: #2a1d12;
+    opacity: 0; z-index: 2;
+  }
+  #open:checked ~ #show .num { animation: blink 1s linear var(--t); }
+  @keyframes blink { 0%, 92% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* one slide = one polaroid. Slides stack, so earlier photos stay on the pile underneath. */
   .slide {
     --start: calc(var(--intro) + var(--i) * var(--d));
-    position: absolute; inset: 0; overflow: hidden;
-    opacity: 0;
-    z-index: calc(var(--i) + 1);
-  }
-  .slide .bg {
-    position: absolute; inset: -40px;
-    background: var(--src) center / cover no-repeat;
-    filter: blur(30px) brightness(.55) saturate(1.2);
-    transform: scale(1.1);
-  }
-  .slide .photo {   /* the photo is referenced once via --src, so the standalone build embeds it once */
     position: absolute; inset: 0;
-    background: var(--src) center / contain no-repeat;
-    will-change: transform;
+    z-index: calc(var(--i) + 1);
+    pointer-events: none;
   }
-  .slide .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55)); }
-  .caption {
-    position: absolute; left: 16px; right: 16px; bottom: max(9vh, 60px);
-    text-align: center;
-    font-family: 'Suez One', 'Arial Hebrew', serif;
-    font-size: clamp(22px, 6vw, 44px);
-    color: #fff;
-    text-shadow: 0 2px 18px rgba(0,0,0,.8), 0 0 40px rgba(163,18,58,.6);
+  .leak {   /* projector light leak / film burn at the cut */
+    position: absolute; inset: 0; z-index: 3; opacity: 0;
+    background:
+      radial-gradient(ellipse at var(--lx, 85%) 20%, rgba(255,200,120,.95), rgba(255,120,40,.55) 30%, transparent 65%),
+      radial-gradient(ellipse at 10% 90%, rgba(255,90,40,.45), transparent 55%);
+    mix-blend-mode: screen;
+  }
+  #open:checked ~ #show .leak { animation: leak 1.6s ease-out calc(var(--start) - .3s) both; }
+  @keyframes leak {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    35%  { opacity: .55; }
+    50%  { opacity: .85; }
+    100% { opacity: 0; }
+  }
+  .polaroid {
+    position: absolute; left: 50%; top: 46%;
+    width: min(80vw, 52vh);
+    padding: 4.5% 4.5% 0;
+    background: linear-gradient(160deg, #fffdf6, var(--polaroid) 60%, #e9dfcb);
+    box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.4);
     opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--x), 0) rotate(var(--r));
   }
-  #open:checked ~ #show .slide         { animation: var(--fx) 2s var(--start) both; }
-  #open:checked ~ #show .slide .photo  { animation: var(--kb) calc(var(--d) + 3s) linear var(--start) both; }
-  #open:checked ~ #show .slide .caption{ animation: capIn 1.6s calc(var(--start) + 1s) ease both; }
+  #open:checked ~ #show .polaroid {
+    animation:
+      drop 1.5s cubic-bezier(.2,.9,.3,1) var(--start) both,
+      sink 1.6s ease calc(var(--start) + var(--d) + .2s) forwards;
+  }
+  @keyframes drop {
+    0%   { opacity: 0; transform: translate(-50%, -50%) translate(var(--x), -8vh) rotate(calc(var(--r) + 12deg)) scale(1.3); }
+    55%  { opacity: 1; transform: translate(-50%, -50%) translate(var(--x), 0)    rotate(calc(var(--r) - 1.5deg)) scale(.98); }
+    100% { opacity: 1; transform: translate(-50%, -50%) translate(var(--x), 0)    rotate(var(--r)) scale(1); }
+  }
+  @keyframes sink { to { filter: brightness(.45) sepia(.5); } }
+  .frame { aspect-ratio: 3 / 4; overflow: hidden; background: #2b2420; }
+  .photo {
+    width: 100%; height: 100%;
+    background: var(--src) center 30% / cover no-repeat;
+  }
+  #open:checked ~ #show .photo {
+    animation:
+      develop 3.8s ease-out calc(var(--start) + .2s) both,
+      drift calc(var(--d) + 2s) linear var(--start) both;
+  }
+  /* like a Polaroid developing: pale sepia haze slowly turning into colour */
+  @keyframes develop {
+    0%   { filter: sepia(1) brightness(1.9) contrast(.45) saturate(.3) blur(3px); }
+    45%  { filter: sepia(.75) brightness(1.3) contrast(.8) saturate(.6) blur(.8px); }
+    100% { filter: sepia(.15) brightness(1) contrast(1.05) saturate(1.05) blur(0); }
+  }
+  @keyframes drift { from { transform: scale(1.1); } to { transform: scale(1); } }
+  .polaroid figcaption {
+    font-family: var(--hand); font-weight: 700;
+    font-size: min(8.4vw, 5.4vh); line-height: 1.1;
+    color: var(--pen);
+    text-align: center;
+    padding: 3.5% 2% 6%;
+    min-height: 1.1em;
+    clip-path: inset(0 0 0 100%);
+  }
+  /* handwriting appears right-to-left, the way Hebrew is written */
+  #open:checked ~ #show figcaption { animation: write 1.8s ease-in-out calc(var(--start) + 1.6s) both; }
+  @keyframes write { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
 
-  @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes blurIn    { from { opacity: 0; filter: blur(25px) brightness(1.6); } to { opacity: 1; filter: blur(0) brightness(1); } }
-  @keyframes circleIn  { from { opacity: 1; clip-path: circle(0% at 50% 50%); } to { opacity: 1; clip-path: circle(80% at 50% 50%); } }
-  @keyframes curtainIn { from { opacity: 1; clip-path: inset(0 50% 0 50%); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
-  @keyframes zoomIn    { from { opacity: 0; transform: scale(1.35) rotate(2deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
-  @keyframes lightIn   { 0% { opacity: 0; filter: brightness(4) saturate(0); } 60% { opacity: 1; } 100% { opacity: 1; filter: brightness(1) saturate(1); } }
-  @keyframes kb1 { from { transform: scale(1)    translate(0,0); }    to { transform: scale(1.12) translate(-2%, -1%); } }
-  @keyframes kb2 { from { transform: scale(1.12) translate(2%, 1%); } to { transform: scale(1)    translate(0,0); } }
-  @keyframes kb3 { from { transform: scale(1.05) translate(-2%, 0); } to { transform: scale(1.1)  translate(2%, -1%); } }
-  @keyframes capIn {
-    from { opacity: 0; transform: translateY(20px); letter-spacing: .3em; filter: blur(8px); }
-    to   { opacity: 1; transform: translateY(0);    letter-spacing: 0;    filter: blur(0); }
+  /* ---------- old film layer: grain, scratches, flicker, vignette ---------- */
+  #film {
+    position: fixed; inset: 0; z-index: 8; pointer-events: none;
+    opacity: 0; visibility: hidden;
+  }
+  #open:checked ~ #film { opacity: 1; visibility: visible; transition: opacity 1s ease 4.2s; }
+  #film > div { position: absolute; }
+  .grain {
+    inset: 0;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: .35;
+    animation: grain .5s steps(5) infinite;
+  }
+  @keyframes grain {   /* move the texture, not the layer: keeps the film layer screen-sized and cheap */
+    0%   { background-position: 0 0; }
+    20%  { background-position: -37px 53px; }
+    40%  { background-position: 61px -29px; }
+    60%  { background-position: -83px -71px; }
+    80%  { background-position: 17px 97px; }
+    100% { background-position: 0 0; }
+  }
+  .scratches {
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent 23%, rgba(255,245,225,.35) 23%, rgba(255,245,225,.35) 23.15%, transparent 23.15%),
+      linear-gradient(90deg, transparent 71%, rgba(0,0,0,.4) 71%, rgba(0,0,0,.4) 71.12%, transparent 71.12%),
+      linear-gradient(90deg, transparent 52%, rgba(255,245,225,.18) 52%, rgba(255,245,225,.18) 52.3%, transparent 52.3%);
+    animation: scratch 1.1s steps(1) infinite;
+  }
+  @keyframes scratch {
+    0%   { transform: translateX(0);    opacity: .9; }
+    25%  { transform: translateX(-9vw); opacity: .3; }
+    50%  { transform: translateX(14vw); opacity: .8; }
+    75%  { transform: translateX(-3vw); opacity: 0; }
+  }
+  .flicker {
+    inset: 0;
+    background: rgba(255, 228, 180, .07);
+    animation: flicker .16s steps(1) infinite;
+  }
+  @keyframes flicker {
+    0% { opacity: .2; } 25% { opacity: 1; } 50% { opacity: .5; } 75% { opacity: .9; }
+  }
+  .vignette {
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(20,10,4,.7) 100%);
   }
 
   /* ---------- finale ---------- */
   #finale {
-    position: fixed; inset: 0; z-index: 4;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+    --T: calc(var(--intro) + var(--n) * var(--d));
+    position: fixed; inset: 0; z-index: 6;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
     text-align: center; padding: 16px;
-    background: radial-gradient(ellipse at 50% 30%, var(--bg2), var(--bg1) 70%) var(--bg1);
+    background: radial-gradient(ellipse at 50% 35%, #3a2418, var(--film) 75%) var(--film);
     opacity: 0; visibility: hidden;
   }
   #open:checked ~ #finale {
     opacity: 1; visibility: visible;
-    transition: opacity 2s ease calc(var(--intro) + var(--n) * var(--d)), visibility 0s calc(var(--intro) + var(--n) * var(--d));
+    transition: opacity 2.2s ease var(--T), visibility 0s var(--T);
   }
   #finale h1 {
-    font-family: 'Suez One', 'Arial Hebrew', serif;
-    font-size: clamp(34px, 10vw, 72px);
+    font-family: var(--hand); font-weight: 700;
+    font-size: clamp(64px, 19vw, 130px); line-height: 1;
     color: var(--gold);
-    background: linear-gradient(90deg, var(--gold), #fff3d6, var(--gold));
-    background-size: 200% auto;
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-    animation: shine 4s linear infinite;
+    text-shadow: 0 0 30px rgba(233,194,122,.35);
+    clip-path: inset(0 0 0 100%);
   }
-  #finale p { font-size: clamp(16px, 4.4vw, 22px); line-height: 1.7; max-width: 560px; color: #fbe3e8; }
-  @keyframes shine { to { background-position: 200% center; } }
+  #open:checked ~ #finale h1 { animation: write 2.6s ease-in-out calc(var(--T) + 1s) both; }
+  #finale .line {
+    font-size: clamp(18px, 4.8vw, 24px); line-height: 1.6; max-width: 34ch; color: #fbe3e8;
+    opacity: 0;
+  }
+  #finale .line.big { font-family: var(--hand); font-weight: 700; font-size: clamp(30px, 9vw, 48px); color: var(--paper); }
+  #open:checked ~ #finale .line { animation: lineIn 1.8s ease calc(var(--T) + var(--k)) both; }
+  @keyframes lineIn { from { opacity: 0; filter: blur(8px); transform: translateY(12px); } to { opacity: 1; filter: blur(0); transform: none; } }
   .btn {
     font-family: 'Rubik', Arial, sans-serif; font-size: 16px; color: var(--paper);
     background: rgba(255,255,255,.08); border: 1px solid rgba(233,194,122,.6);
     padding: 10px 22px; border-radius: 999px; cursor: pointer;
   }
   .btn:hover { background: rgba(255,255,255,.16); }
+  #finale .btn { opacity: 0; margin-top: 10px; }
+  #open:checked ~ #finale .btn { animation: lineIn 1s ease calc(var(--T) + 8s) both; }
 
   /* ---------- music controls (JS) ---------- */
   #musicBtn {
@@ -269,7 +392,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     .envelope, .hint { animation: none; }
-    #open:checked ~ #show .slide .photo { animation: none; }
+    #film .grain, #film .scratches, #film .flicker { animation: none; }
+    #open:checked ~ #show .photo { animation: develop 3.8s ease-out calc(var(--start) + .2s) both; }
   }
 </style>
 </head>
@@ -293,27 +417,41 @@
   </div>
 </section>
 
-<!-- Slideshow: order here = order on screen. --i counts from 0. -->
+<!-- Show. Order here = order on screen. --i counts from 0, --r/--x = how the polaroid lands on the pile. -->
 <section id="show">
-  <div class="slide" style="--i:0;  --fx:fadeIn;    --kb:kb1; --src:url('photos/1.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">איפה שהכל התחיל</div></div>
-  <div class="slide" style="--i:1;  --fx:circleIn;  --kb:kb2; --src:url('photos/2.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">מחובקים, תמיד</div></div>
-  <div class="slide" style="--i:2;  --fx:blurIn;    --kb:kb3; --src:url('photos/3.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">הפרצופים שלך 😘</div></div>
-  <div class="slide" style="--i:3;  --fx:zoomIn;    --kb:kb1; --src:url('photos/4.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">כל רגע קטן איתך</div></div>
-  <div class="slide" style="--i:4;  --fx:curtainIn; --kb:kb2; --src:url('photos/11.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">בלי פילטרים 😜</div></div>
-  <div class="slide" style="--i:5;  --fx:lightIn;   --kb:kb3; --src:url('photos/5.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">הלילות שלנו</div></div>
-  <div class="slide" style="--i:6;  --fx:fadeIn;    --kb:kb1; --src:url('photos/12.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">הבית שלנו</div></div>
-  <div class="slide" style="--i:7;  --fx:circleIn;  --kb:kb2; --src:url('photos/13.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">ממריאים יחד ✈</div></div>
-  <div class="slide" style="--i:8;  --fx:blurIn;    --kb:kb3; --src:url('photos/8.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">את והטבעת 💍</div></div>
-  <div class="slide" style="--i:9;  --fx:zoomIn;    --kb:kb1; --src:url('photos/10.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">פראג, רק את ואני</div></div>
-  <div class="slide" style="--i:10; --fx:curtainIn; --kb:kb2; --src:url('photos/7.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">נשיקה ממך</div></div>
-  <div class="slide" style="--i:11; --fx:lightIn;   --kb:kb3; --src:url('photos/6.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">יחד, בכל שמחה</div></div>
-  <div class="slide" style="--i:12; --fx:fadeIn;    --kb:kb1; --src:url('photos/9.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">והמשפחה שבנינו ❤</div></div>
+  <div class="leader">
+    <div class="ring">
+      <div class="sweep"></div>
+      <div class="num" style="--t:4.6s">3</div>
+      <div class="num" style="--t:5.6s">2</div>
+      <div class="num" style="--t:6.6s">1</div>
+    </div>
+  </div>
+
+  <div class="slide" style="--i:0;  --r:-4deg; --x:-2vw; --src:url('photos/1.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>ככה הכל התחיל…</figcaption></figure></div>
+  <div class="slide" style="--i:1;  --r:3deg;  --x:2vw;  --lx:15%; --src:url('photos/2.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>ומהרגע הראשון ידעתי</figcaption></figure></div>
+  <div class="slide" style="--i:2;  --r:-2deg; --x:-1vw; --src:url('photos/3.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>את מצחיקה אותי כמו אף אחד</figcaption></figure></div>
+  <div class="slide" style="--i:3;  --r:5deg;  --x:3vw;  --lx:20%; --src:url('photos/4.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>עולים יחד, תמיד</figcaption></figure></div>
+  <div class="slide" style="--i:4;  --r:-5deg; --x:-3vw; --src:url('photos/11.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>גם בשטויות הכי קטנות – רק איתך</figcaption></figure></div>
+  <div class="slide" style="--i:5;  --r:2deg;  --x:1vw;  --lx:10%; --src:url('photos/5.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>כל ערב איתך הוא חגיגה</figcaption></figure></div>
+  <div class="slide" style="--i:6;  --r:-3deg; --x:-2vw; --src:url('photos/12.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>בונים בית, צעד אחרי צעד</figcaption></figure></div>
+  <div class="slide" style="--i:7;  --r:4deg;  --x:2vw;  --lx:25%; --src:url('photos/13.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>לכל מקום בעולם – יד ביד</figcaption></figure></div>
+  <div class="slide" style="--i:8;  --r:-2deg; --x:-1vw; --src:url('photos/8.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>הבטחתי לך – לתמיד</figcaption></figure></div>
+  <div class="slide" style="--i:9;  --r:3deg;  --x:2vw;  --lx:12%; --src:url('photos/10.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>פראג, רק את ואני</figcaption></figure></div>
+  <div class="slide" style="--i:10; --r:-4deg; --x:-2vw; --src:url('photos/7.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>הכי יפה בכל חדר</figcaption></figure></div>
+  <div class="slide" style="--i:11; --r:2deg;  --x:1vw;  --lx:18%; --src:url('photos/6.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>ביחד, בכל שמחה</figcaption></figure></div>
+  <div class="slide" style="--i:12; --r:0deg;  --x:0vw;  --src:url('photos/9.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>והמתנות הכי גדולות שלנו ❤</figcaption></figure></div>
 </section>
+
+<!-- Old film texture over everything after the envelope opens -->
+<div id="film"><div class="grain"></div><div class="scratches"></div><div class="flicker"></div><div class="vignette"></div></div>
 
 <!-- Finale -->
 <section id="finale">
   <h1>אני אוהב אותך</h1>
-  <p>תודה רבה על האמונה והגב שאת נותנת לי.<br>אני אוהב אותך הכי בעולם ❤<br><br>יום נישואין שמח</p>
+  <p class="line" style="--k:3.2s">תודה רבה על האמונה והגב שאת נותנת לי.</p>
+  <p class="line" style="--k:4.6s">אני אוהב אותך הכי בעולם ❤</p>
+  <p class="line big" style="--k:6.2s">יום נישואין שמח</p>
   <label class="btn" for="open">לצפות שוב ↺</label>
 </section>
 
