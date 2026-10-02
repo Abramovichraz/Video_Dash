@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>יום נישואין שמח</title>
+<meta property="og:title" content="יש לך מכתב 💌">
+<meta property="og:description" content="פתחי את המעטפה">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Rubik:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     ✏️ ערוך כאן: כותרות, תאריך וטקסט המכתב נמצאים בסקריפט למטה (CONFIG)
+     ========================================================= */
+  :root {
+    --bg1: #2a0f1c;
+    --bg2: #5a1e33;
+    --paper: #fbf3e8;
+    --paper-dark: #efe0cc;
+    --env: #e8c9b0;
+    --env-dark: #d4ad8f;
+    --env-shadow: #b98d6d;
+    --seal: #a3123a;
+    --seal-light: #d23a5e;
+    --gold: #e9c27a;
+    --ink: #4a1f2b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Rubik', sans-serif;
+    background: radial-gradient(ellipse at 50% 30%, var(--bg2), var(--bg1) 70%);
+    color: var(--paper);
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ---------- floating hearts ---------- */
+  #hearts { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .heart {
+    position: absolute; bottom: -40px;
+    color: rgba(255, 170, 190, .55);
+    animation: rise linear forwards;
+    filter: drop-shadow(0 0 6px rgba(255,120,150,.5));
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0) rotate(0); opacity: 0; }
+    10%  { opacity: 1; }
+    100% { transform: translateY(-110vh) translateX(var(--drift)) rotate(var(--rot)); opacity: 0; }
+  }
+
+  /* ---------- envelope scene ---------- */
+  #envelopeScene {
+    position: fixed; inset: 0; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 36px; padding: 16px;
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  #envelopeScene.gone { opacity: 0; transform: scale(1.08); pointer-events: none; }
+
+  .hint {
+    font-family: 'Suez One', serif;
+    font-size: clamp(20px, 5vw, 28px);
+    color: var(--gold);
+    text-align: center;
+    animation: pulse 2.2s ease-in-out infinite;
+    transition: opacity .5s;
+  }
+  .hint small { display: block; font-family: 'Rubik'; font-size: 15px; color: #f5d9df; opacity: .8; margin-top: 6px; }
+  @keyframes pulse { 0%,100% { opacity: .75; } 50% { opacity: 1; } }
+
+  .envelope {
+    --w: min(86vw, 420px);
+    width: var(--w); height: calc(var(--w) * .66);
+    position: relative;
+    perspective: 1200px;
+    animation: float 4s ease-in-out infinite;
+  }
+  .envelope.opening { animation: none; }
+  @keyframes float { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+
+  .env-back {
+    position: absolute; inset: 0;
+    background: var(--env-dark);
+    border-radius: 6px;
+    box-shadow: 0 30px 60px rgba(0,0,0,.45);
+  }
+  .letter {
+    position: absolute; left: 6%; right: 6%; top: 8%; height: 84%;
+    background: linear-gradient(var(--paper), var(--paper-dark));
+    border-radius: 4px;
+    z-index: 2;
+    color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 18px;
+    transition: transform 1.6s cubic-bezier(.2,.8,.2,1);
+    box-shadow: 0 4px 14px rgba(0,0,0,.15);
+    opacity: 0;
+  }
+  .envelope.opening .letter { opacity: 1; }
+  .letter h2 { font-family: 'Suez One', serif; font-size: clamp(20px, 5.4vw, 30px); color: var(--seal); }
+  .letter p  { font-size: clamp(13px, 3.4vw, 16px); margin-top: 8px; line-height: 1.5; }
+  .envelope.opened .letter { transform: translateY(-62%); z-index: 4; transition-delay: .2s; }
+
+  /* front pocket: left, right and bottom triangles */
+  .env-front {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    border-radius: 6px; overflow: hidden;
+  }
+  .env-front::before, .env-front::after {
+    content: ""; position: absolute; inset: 0;
+  }
+  .env-front::before { /* sides */
+    background:
+      linear-gradient(to top right, var(--env) 50%, transparent 50.5%) left / 50.5% 100% no-repeat,
+      linear-gradient(to top left,  var(--env) 50%, transparent 50.5%) right / 50.5% 100% no-repeat;
+  }
+  .env-front::after { /* bottom */
+    background: var(--env);
+    clip-path: polygon(0 100%, 50% 42%, 100% 100%);
+    filter: brightness(1.04);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.04);
+  }
+
+  .flap {
+    position: absolute; left: 0; right: 0; top: 0; height: 58%;
+    z-index: 5;
+    transform-origin: top center;
+    transition: transform 1s cubic-bezier(.6,.05,.3,1), z-index 0s .5s;
+    transform-style: preserve-3d;
+  }
+  .flap::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, var(--env-dark), var(--env));
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,.2));
+  }
+  .envelope.opened .flap { transform: rotateX(180deg); z-index: 1; }
+
+  /* the wax seal / sticker */
+  .seal {
+    position: absolute; z-index: 6;
+    left: 50%; top: 58%;
+    width: 78px; height: 78px; margin: -39px 0 0 -39px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--seal-light), var(--seal) 60%, #6e0a26);
+    box-shadow: 0 6px 14px rgba(0,0,0,.4), inset 0 -4px 8px rgba(0,0,0,.3), inset 0 3px 6px rgba(255,255,255,.25);
+    display: grid; place-items: center;
+    cursor: grab; touch-action: none;
+    transition: transform .25s ease;
+  }
+  .seal::before { /* inner wax ring */
+    content: ""; position: absolute; inset: 8px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.18);
+  }
+  .seal span { font-size: 34px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); pointer-events: none; }
+  .seal:hover { transform: scale(1.06) rotate(-4deg); }
+  .seal.dragging { cursor: grabbing; transition: none; }
+  .seal.peeled {
+    transition: transform 1s cubic-bezier(.5,-.3,.6,1), opacity 1s ease;
+    transform: translate(-40vw, -70vh) rotate(-260deg) scale(.6) !important;
+    opacity: 0;
+  }
+
+  /* ---------- slideshow ---------- */
+  #show {
+    position: fixed; inset: 0; z-index: 3;
+    opacity: 0; pointer-events: none;
+    transition: opacity 1.5s ease;
+    background: #000;
+  }
+  #show.on { opacity: 1; pointer-events: auto; }
+  .slide {
+    position: absolute; inset: 0; overflow: hidden;
+    opacity: 0;
+  }
+  .slide .bg {
+    position: absolute; inset: -40px;
+    background-size: cover; background-position: center;
+    filter: blur(30px) brightness(.55) saturate(1.2);
+    transform: scale(1.1);
+  }
+  .slide img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain;
+    will-change: transform;
+  }
+  .slide .vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55));
+  }
+  .slide .fallback {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: linear-gradient(135deg, #7b2342, #2a0f1c);
+    font-size: 90px;
+  }
+  .caption {
+    position: absolute; left: 16px; right: 16px; bottom: max(9vh, 60px);
+    text-align: center;
+    font-family: 'Suez One', serif;
+    font-size: clamp(22px, 6vw, 44px);
+    color: #fff;
+    text-shadow: 0 2px 18px rgba(0,0,0,.8), 0 0 40px rgba(163,18,58,.6);
+    opacity: 0;
+  }
+  .slide.active .caption { animation: capIn 1.6s 1s ease forwards; }
+  @keyframes capIn {
+    from { opacity: 0; transform: translateY(20px); letter-spacing: .3em; filter: blur(8px); }
+    to   { opacity: 1; transform: translateY(0);    letter-spacing: 0;    filter: blur(0); }
+  }
+
+  /* transitions — each slide gets one of these on enter */
+  .slide.active { opacity: 1; z-index: 2; }
+  .slide.leaving { z-index: 1; opacity: 1; animation: fadeOut 1.8s ease forwards; }
+  @keyframes fadeOut { to { opacity: 0; } }
+
+  .fx-fade.active       { animation: fadeIn 2s ease both; }
+  .fx-blur.active       { animation: blurIn 2.2s ease both; }
+  .fx-circle.active     { animation: circleIn 2.2s cubic-bezier(.6,0,.2,1) both; }
+  .fx-curtain.active    { animation: curtainIn 2s cubic-bezier(.7,0,.2,1) both; }
+  .fx-zoom.active       { animation: zoomIn 2.2s cubic-bezier(.2,.7,.2,1) both; }
+  .fx-light.active      { animation: lightIn 2.4s ease both; }
+  @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes blurIn    { from { opacity: 0; filter: blur(25px) brightness(1.6); } to { opacity: 1; filter: blur(0) brightness(1); } }
+  @keyframes circleIn  { from { clip-path: circle(0% at 50% 50%); } to { clip-path: circle(80% at 50% 50%); } }
+  @keyframes curtainIn { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes zoomIn    { from { opacity: 0; transform: scale(1.35) rotate(2deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+  @keyframes lightIn   { 0% { opacity: 0; filter: brightness(4) saturate(0); } 60% { opacity: 1; } 100% { filter: brightness(1) saturate(1); } }
+
+  /* Ken Burns on the photo itself */
+  .slide.active img { animation: var(--kb) var(--dur) linear both; }
+  @keyframes kb1 { from { transform: scale(1)    translate(0,0); }        to { transform: scale(1.12) translate(-2%, -1%); } }
+  @keyframes kb2 { from { transform: scale(1.12) translate(2%, 1%); }     to { transform: scale(1)    translate(0,0); } }
+  @keyframes kb3 { from { transform: scale(1.05) translate(-2%, 0); }     to { transform: scale(1.1)  translate(2%, -1%); } }
+
+  /* ---------- finale ---------- */
+  #finale {
+    position: fixed; inset: 0; z-index: 4;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+    text-align: center; padding: 16px;
+    opacity: 0; pointer-events: none; transition: opacity 2s ease;
+  }
+  #finale.on { opacity: 1; pointer-events: auto; }
+  #finale h1 {
+    font-family: 'Suez One', serif;
+    font-size: clamp(34px, 10vw, 72px);
+    background: linear-gradient(90deg, var(--gold), #fff3d6, var(--gold));
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 4s linear infinite;
+  }
+  #finale p { font-size: clamp(16px, 4.4vw, 22px); line-height: 1.7; max-width: 560px; color: #fbe3e8; white-space: pre-line; }
+  @keyframes shine { to { background-position: 200% center; } }
+  .btn {
+    font-family: 'Rubik'; font-size: 16px; color: var(--paper);
+    background: rgba(255,255,255,.08); border: 1px solid rgba(233,194,122,.6);
+    padding: 10px 22px; border-radius: 999px; cursor: pointer;
+  }
+  .btn:hover { background: rgba(255,255,255,.16); }
+
+  /* ---------- music controls ---------- */
+  #ytWrap { position: fixed; width: 200px; height: 200px; left: -9999px; top: 0; opacity: 0; pointer-events: none; }
+  #musicBtn {
+    position: fixed; z-index: 10; top: max(14px, env(safe-area-inset-top)); left: 14px;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.25); color: #fff;
+    font-size: 20px; cursor: pointer; display: none;
+    backdrop-filter: blur(6px);
+  }
+  #tapMusic {
+    position: fixed; z-index: 11; left: 50%; top: 18px; transform: translateX(-50%);
+    display: none; white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .envelope, .hint { animation: none; }
+    .slide.active img { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hearts"></div>
+
+<!-- Envelope -->
+<section id="envelopeScene">
+  <div class="hint" id="hint">יש לך מכתב 💌<small>הרימי את המדבקה כדי לפתוח</small></div>
+  <div class="envelope" id="envelope">
+    <div class="env-back"></div>
+    <div class="letter">
+      <h2 id="letterTitle"></h2>
+      <p id="letterText"></p>
+    </div>
+    <div class="env-front"></div>
+    <div class="flap"></div>
+    <div class="seal" id="seal" role="button" aria-label="פתחי את המעטפה" tabindex="0"><span>❤</span></div>
+  </div>
+</section>
+
+<!-- Slideshow -->
+<section id="show"></section>
+
+<!-- Finale -->
+<section id="finale">
+  <h1 id="finaleTitle"></h1>
+  <p id="finaleText"></p>
+  <button class="btn" id="replay">לצפות שוב ↺</button>
+</section>
+
+<!-- Hidden YouTube player -->
+<div id="ytWrap"><div id="yt"></div></div>
+<button id="musicBtn" aria-label="השתק / הפעל מוזיקה">🔊</button>
+<button class="btn" id="tapMusic">🎵 לחצי להפעלת המוזיקה</button>
+
+<script>
+/* =========================================================
+   ✏️ CONFIG — כאן עורכים הכל
+   ========================================================= */
+const CONFIG = {
+  youtubeId: 'Ze63vfpYAV4',
+  musicStartSeconds: 0,          // מאיזו שנייה בשיר להתחיל
+  secondsPerPhoto: 6,
+
+  letterTitle: 'יום נישואין שמח',
+  letterText: 'לאישה הכי יפה בעולם ❤',
+
+  // התמונות: שימו את הקבצים בתיקייה photos/ ועדכנו כאן את השמות והכיתובים
+  photos: [
+    { src: 'photos/1.jpg', caption: 'איפה שהכל התחיל' },
+    { src: 'photos/2.jpg', caption: 'הצחוק שלך' },
+    { src: 'photos/3.jpg', caption: 'כל רגע איתך' },
+    { src: 'photos/4.jpg', caption: 'היום שאמרנו כן' },
+    { src: 'photos/5.jpg', caption: 'ההרפתקאות שלנו' },
+    { src: 'photos/6.jpg', caption: 'ועוד אלף כאלה' },
+  ],
+
+  finaleTitle: 'אני אוהב אותך',
+  finaleText: 'תודה על כל יום, על כל חיוך ועל הבית שבנינו יחד.\nיום נישואין שמח, אהובה שלי.',
+};
+</script>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  $('letterTitle').textContent = CONFIG.letterTitle;
+  $('letterText').textContent  = CONFIG.letterText;
+  $('finaleTitle').textContent = CONFIG.finaleTitle;
+  $('finaleText').textContent  = CONFIG.finaleText;
+
+  /* ---------- floating hearts ---------- */
+  const heartsEl = $('hearts');
+  let heartRate = 900;
+  function spawnHeart() {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = Math.random() < .8 ? '❤' : '✦';
+    const size = 10 + Math.random() * 22;
+    const dur = 7 + Math.random() * 7;
+    h.style.cssText = `left:${Math.random()*100}vw;font-size:${size}px;animation-duration:${dur}s;` +
+      `--drift:${(Math.random()-.5)*160}px;--rot:${(Math.random()-.5)*120}deg;`;
+    heartsEl.appendChild(h);
+    setTimeout(() => h.remove(), dur * 1000);
+  }
+  (function loop() { spawnHeart(); setTimeout(loop, heartRate * (.5 + Math.random())); })();
+
+  /* ---------- YouTube player (created on load so play() runs inside the tap) ---------- */
+  let player, playerReady = false, wantPlay = false, muted = false;
+  window.onYouTubeIframeAPIReady = () => {
+    player = new YT.Player('yt', {
+      width: 200, height: 200, videoId: CONFIG.youtubeId,
+      playerVars: { playsinline: 1, controls: 0, start: CONFIG.musicStartSeconds, rel: 0 },
+      events: {
+        onReady: () => { playerReady = true; if (wantPlay) playMusic(); },
+        onStateChange: e => {
+          if (e.data === YT.PlayerState.PLAYING) { $('tapMusic').style.display = 'none'; $('musicBtn').style.display = 'block'; }
+          if (e.data === YT.PlayerState.ENDED) { player.seekTo(CONFIG.musicStartSeconds); player.playVideo(); }
+        },
+      },
+    });
+  };
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+
+  function playMusic() {
+    wantPlay = true;
+    if (!playerReady) return;
+    try { player.unMute(); player.setVolume(100); player.playVideo(); } catch (e) {}
+  }
+  // If the browser blocked autoplay, offer a one-tap fallback
+  function checkMusicLater() {
+    setTimeout(() => {
+      const playing = playerReady && player.getPlayerState && player.getPlayerState() === YT.PlayerState.PLAYING;
+      if (!playing) $('tapMusic').style.display = 'block';
+    }, 2500);
+  }
+  $('tapMusic').onclick = () => { playMusic(); $('tapMusic').style.display = 'none'; };
+  $('musicBtn').onclick = () => {
+    if (!playerReady) return;
+    muted = !muted;
+    muted ? player.mute() : player.unMute();
+    $('musicBtn').textContent = muted ? '🔇' : '🔊';
+  };
+
+  /* ---------- seal: click or drag up to peel ---------- */
+  const seal = $('seal'), envelope = $('envelope');
+  let opened = false, startX = 0, startY = 0, dragging = false;
+
+  seal.addEventListener('pointerdown', e => {
+    if (opened) return;
+    dragging = true; startX = e.clientX; startY = e.clientY;
+    seal.classList.add('dragging');
+    seal.setPointerCapture(e.pointerId);
+  });
+  seal.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    const dist = Math.hypot(dx, dy);
+    seal.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx * .4}deg) scale(${1 + Math.min(dist, 80) / 400})`;
+    if (dist > 70) openEnvelope();
+  });
+  const endDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    seal.classList.remove('dragging');
+    openEnvelope(); // a plain tap/click also opens
+  };
+  seal.addEventListener('pointerup', endDrag);
+  seal.addEventListener('pointercancel', () => { dragging = false; seal.classList.remove('dragging'); seal.style.transform = ''; });
+  seal.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openEnvelope(); });
+
+  function openEnvelope() {
+    if (opened) return;
+    opened = true; dragging = false;
+    playMusic();            // must run inside the user gesture
+    checkMusicLater();
+    seal.classList.remove('dragging');
+    seal.classList.add('peeled');
+    $('hint').style.opacity = 0;
+    envelope.classList.add('opening');
+    setTimeout(() => envelope.classList.add('opened'), 450);
+    heartRate = 250;
+    for (let i = 0; i < 25; i++) setTimeout(spawnHeart, i * 40);
+    setTimeout(() => $('envelopeScene').classList.add('gone'), 4200);
+    setTimeout(startShow, 4600);
+  }
+
+  /* ---------- slideshow ---------- */
+  const FX = ['fx-fade', 'fx-circle', 'fx-blur', 'fx-zoom', 'fx-curtain', 'fx-light'];
+  const KB = ['kb1', 'kb2', 'kb3'];
+  const show = $('show');
+  const slides = CONFIG.photos.map((p, i) => {
+    const s = document.createElement('div');
+    s.className = 'slide';
+    s.innerHTML = `<div class="bg" style="background-image:url('${p.src}')"></div>
+      <img src="${p.src}" alt="" loading="${i < 2 ? 'eager' : 'lazy'}">
+      <div class="vignette"></div><div class="caption"></div>`;
+    s.querySelector('.caption').textContent = p.caption || '';
+    s.querySelector('img').onerror = function () {
+      this.replaceWith(Object.assign(document.createElement('div'), { className: 'fallback', textContent: '❤' }));
+    };
+    s.style.setProperty('--dur', (CONFIG.secondsPerPhoto + 2) + 's');
+    s.style.setProperty('--kb', KB[i % KB.length]);
+    show.appendChild(s);
+    return s;
+  });
+
+  let idx = -1, timer;
+  function startShow() {
+    heartRate = 1400;
+    show.classList.add('on');
+    next();
+  }
+  function next() {
+    const prev = slides[idx];
+    idx++;
+    if (prev) {
+      prev.className = 'slide leaving';
+      setTimeout(() => { if (!prev.classList.contains('active')) prev.className = 'slide'; }, 1900);
+    }
+    if (idx >= slides.length) return finish();
+    const s = slides[idx];
+    s.className = 'slide ' + FX[idx % FX.length];
+    void s.offsetWidth; // restart animations
+    s.classList.add('active');
+    timer = setTimeout(next, CONFIG.secondsPerPhoto * 1000);
+  }
+  function finish() {
+    show.classList.remove('on');
+    $('finale').classList.add('on');
+    heartRate = 300;
+  }
+  $('replay').onclick = () => {
+    clearTimeout(timer);
+    $('finale').classList.remove('on');
+    slides.forEach(s => s.className = 'slide');
+    idx = -1;
+    setTimeout(startShow, 800);
+  };
+})();
+</script>
+</body>
+</html>
