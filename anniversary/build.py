@@ -1,4 +1,4 @@
-"""Build standalone.html: index.html with every photo embedded, so it works as a single file."""
+"""Build standalone.html: index.html with every photo and the song embedded, so it works as a single file."""
 import base64
 import io
 import re
@@ -22,6 +22,12 @@ names = sorted(set(re.findall(r"photos/[\w.-]+\.(?:jpe?g|png|webp)", html, re.I)
 for name in names:
     html = html.replace(name, data_uri(HERE / name))
     print("embedded", name)
+
+m = re.search(r"audioFile: '([^']+)'", html)
+if m:
+    audio = (HERE / m.group(1)).read_bytes()
+    html = html.replace(m.group(0), "audioFile: 'data:audio/mpeg;base64," + base64.b64encode(audio).decode() + "'")
+    print("embedded", m.group(1))
 
 out = HERE / "standalone.html"
 out.write_text(html, encoding="utf-8")
