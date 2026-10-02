@@ -239,9 +239,10 @@
     100% { opacity: 0; }
   }
   .polaroid {
-    position: absolute; left: 50%; top: 46%;
-    width: min(80vw, 52vh);
-    padding: 4.5% 4.5% 0;
+    position: absolute; left: 50%; top: 40%;
+    --pw: min(74vw, 46vh);   /* % padding would follow the screen width, so size the border from the polaroid itself */
+    width: var(--pw);
+    padding: calc(var(--pw) * .045) calc(var(--pw) * .045) calc(var(--pw) * .17);
     background: linear-gradient(160deg, #fffdf6, var(--polaroid) 60%, #e9dfcb);
     box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.4);
     opacity: 0;
@@ -275,17 +276,25 @@
     100% { filter: sepia(.15) brightness(1) contrast(1.05) saturate(1.05) blur(0); }
   }
   @keyframes drift { from { transform: scale(1.1); } to { transform: scale(1); } }
-  .polaroid figcaption {
+  /* the letter: one sentence per photo, continuing from photo to photo */
+  .words {
+    position: absolute; left: 16px; right: 16px; bottom: max(5vh, 28px);
+    min-height: 2.3em;
+    display: flex; align-items: center; justify-content: center;
     font-family: var(--hand); font-weight: 700;
-    font-size: min(8.4vw, 5.4vh); line-height: 1.1;
-    color: var(--pen);
-    text-align: center;
-    padding: 3.5% 2% 6%;
-    min-height: 1.1em;
+    font-size: min(9.5vw, 5.6vh); line-height: 1.15;
+    color: var(--paper);
+    text-align: center; text-wrap: balance;
+    text-shadow: 0 2px 12px rgba(0,0,0,.9), 0 0 30px rgba(233,194,122,.25);
     clip-path: inset(0 0 0 100%);
   }
-  /* handwriting appears right-to-left, the way Hebrew is written */
-  #open:checked ~ #show figcaption { animation: write 1.8s ease-in-out calc(var(--start) + 1.6s) both; }
+  /* handwriting appears right-to-left, the way Hebrew is written, then fades as the next photo lands */
+  #open:checked ~ #show .words {
+    animation:
+      write 2s ease-in-out calc(var(--start) + .9s) both,
+      fadeOut .6s ease calc(var(--start) + var(--d) - .5s) forwards;
+  }
+  @keyframes fadeOut { to { opacity: 0; } }
   @keyframes write { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
 
   /* ---------- old film layer: grain, scratches, flicker, vignette ---------- */
@@ -351,7 +360,7 @@
   }
   #finale h1 {
     font-family: var(--hand); font-weight: 700;
-    font-size: clamp(64px, 19vw, 130px); line-height: 1;
+    font-size: clamp(54px, 15vw, 120px); line-height: 1.05; text-wrap: balance;
     color: var(--gold);
     text-shadow: 0 0 30px rgba(233,194,122,.35);
     clip-path: inset(0 0 0 100%);
@@ -428,19 +437,19 @@
     </div>
   </div>
 
-  <div class="slide" style="--i:0;  --r:-4deg; --x:-2vw; --src:url('photos/1.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>ככה הכל התחיל…</figcaption></figure></div>
-  <div class="slide" style="--i:1;  --r:3deg;  --x:2vw;  --lx:15%; --src:url('photos/2.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>ומהרגע הראשון ידעתי</figcaption></figure></div>
-  <div class="slide" style="--i:2;  --r:-2deg; --x:-1vw; --src:url('photos/3.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>את מצחיקה אותי כמו אף אחד</figcaption></figure></div>
-  <div class="slide" style="--i:3;  --r:5deg;  --x:3vw;  --lx:20%; --src:url('photos/4.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>עולים יחד, תמיד</figcaption></figure></div>
-  <div class="slide" style="--i:4;  --r:-5deg; --x:-3vw; --src:url('photos/11.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>גם בשטויות הכי קטנות – רק איתך</figcaption></figure></div>
-  <div class="slide" style="--i:5;  --r:2deg;  --x:1vw;  --lx:10%; --src:url('photos/5.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>כל ערב איתך הוא חגיגה</figcaption></figure></div>
-  <div class="slide" style="--i:6;  --r:-3deg; --x:-2vw; --src:url('photos/12.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>בונים בית, צעד אחרי צעד</figcaption></figure></div>
-  <div class="slide" style="--i:7;  --r:4deg;  --x:2vw;  --lx:25%; --src:url('photos/13.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>לכל מקום בעולם – יד ביד</figcaption></figure></div>
-  <div class="slide" style="--i:8;  --r:-2deg; --x:-1vw; --src:url('photos/8.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>הבטחתי לך – לתמיד</figcaption></figure></div>
-  <div class="slide" style="--i:9;  --r:3deg;  --x:2vw;  --lx:12%; --src:url('photos/10.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>פראג, רק את ואני</figcaption></figure></div>
-  <div class="slide" style="--i:10; --r:-4deg; --x:-2vw; --src:url('photos/7.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>הכי יפה בכל חדר</figcaption></figure></div>
-  <div class="slide" style="--i:11; --r:2deg;  --x:1vw;  --lx:18%; --src:url('photos/6.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>ביחד, בכל שמחה</figcaption></figure></div>
-  <div class="slide" style="--i:12; --r:0deg;  --x:0vw;  --src:url('photos/9.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div><figcaption>והמתנות הכי גדולות שלנו ❤</figcaption></figure></div>
+  <div class="slide" style="--i:0;  --r:-4deg; --x:-2vw; --src:url('photos/1.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">אישתי היקרה,</p></div>
+  <div class="slide" style="--i:1;  --r:3deg;  --x:2vw;  --lx:15%; --src:url('photos/2.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">לא משנה כמה שנים נהיה ביחד,</p></div>
+  <div class="slide" style="--i:2;  --r:-2deg; --x:-1vw; --src:url('photos/3.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">תמיד נישאר אותו זוג שהכיר בזמן הצבא.</p></div>
+  <div class="slide" style="--i:3;  --r:5deg;  --x:3vw;  --lx:20%; --src:url('photos/4.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">עברנו המון ביחד, בשמחה ובעצב,</p></div>
+  <div class="slide" style="--i:4;  --r:-5deg; --x:-3vw; --src:url('photos/11.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">ולא משנה מה עבר עלינו – תמיד התגברנו.</p></div>
+  <div class="slide" style="--i:5;  --r:2deg;  --x:1vw;  --lx:10%; --src:url('photos/5.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">את האהבה הכי גדולה שלי,</p></div>
+  <div class="slide" style="--i:6;  --r:-3deg; --x:-2vw; --src:url('photos/12.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">וההשראה שלי להיות הגבר המושלם.</p></div>
+  <div class="slide" style="--i:7;  --r:4deg;  --x:2vw;  --lx:25%; --src:url('photos/13.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">אני יודע שעברנו תקופה לא קלה,</p></div>
+  <div class="slide" style="--i:8;  --r:-2deg; --x:-1vw; --src:url('photos/8.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">אבל אני מבטיח לך –</p></div>
+  <div class="slide" style="--i:9;  --r:3deg;  --x:2vw;  --lx:12%; --src:url('photos/10.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">מכאן אנחנו רק נעלה,</p></div>
+  <div class="slide" style="--i:10; --r:-4deg; --x:-2vw; --src:url('photos/7.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">ונגשים את כל החלומות שלנו.</p></div>
+  <div class="slide" style="--i:11; --r:2deg;  --x:1vw;  --lx:18%; --src:url('photos/6.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">כי תראי מה כבר בנינו ביחד…</p></div>
+  <div class="slide" style="--i:12; --r:0deg;  --x:0vw;  --src:url('photos/9.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div></div></figure><p class="words">איזה בית ואיזו משפחה הקמנו ❤</p></div>
 </section>
 
 <!-- Old film texture over everything after the envelope opens -->
@@ -448,10 +457,10 @@
 
 <!-- Finale -->
 <section id="finale">
-  <h1>אני אוהב אותך</h1>
-  <p class="line" style="--k:3.2s">תודה רבה על האמונה והגב שאת נותנת לי.</p>
-  <p class="line" style="--k:4.6s">אני אוהב אותך הכי בעולם ❤</p>
-  <p class="line big" style="--k:6.2s">יום נישואין שמח</p>
+  <h1>אני אוהב אותך הכי בעולם</h1>
+  <p class="line" style="--k:3.2s">ותודה על האהבה האינסופית שאת נותנת לי ולמשפחה שלנו,</p>
+  <p class="line" style="--k:4.8s">ועל האמונה והגב שאת נותנת לי ❤</p>
+  <p class="line big" style="--k:6.4s">יום נישואין שמח</p>
   <label class="btn" for="open">לצפות שוב ↺</label>
 </section>
 
