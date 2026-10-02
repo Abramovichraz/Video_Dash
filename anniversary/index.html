@@ -10,20 +10,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Rubik:wght@300;400&family=Amatic+SC:wght@700&display=swap" rel="stylesheet">
 <style>
   /* =========================================================
-     The whole show runs on CSS alone so it also works in previews that
-     block JavaScript: the #open checkbox opens the envelope, and one radio
-     per step (#s0..#s13) says which photo is on top. Arrows and a tap on
-     the photo are <label>s for the next/previous radio. JS only adds
-     music, swiping, keyboard arrows, sticker dragging and hearts.
-     ✏️ תמונות וטקסט המכתב: בתוך <section id="show"> למטה.
+     The whole show (envelope -> film countdown -> polaroids -> finale)
+     runs on CSS alone, driven by the #open checkbox, so it works even in
+     previews that block JavaScript. JS only adds music, sticker dragging
+     and hearts.
+     ✏️ תמונות וכיתובים: בתוך <section id="show"> למטה.
+     ✏️ קצב: --d = שניות לכל תמונה, --n = מספר התמונות.
      ========================================================= */
   :root {
     --bg1: #2a0f1c;
     --bg2: #5a1e33;
-    --paper: #fbf3e8;
-    --paper-dark: #efe0cc;
-    --env: #e8c9b0;
-    --env-dark: #d4ad8f;
+    --paper: #f4e8cf;      /* old letter paper */
+    --paper-dark: #e2cea7;
+    --env: #cfae84;        /* aged kraft envelope */
+    --env-dark: #a9855a;
     --seal: #a3123a;
     --seal-light: #d23a5e;
     --gold: #e9c27a;
@@ -32,14 +32,16 @@
     --polaroid: #f6f0e4;
     --pen: #2c2340;         /* handwriting ink */
 
-    --intro: 7.6s;  /* envelope (4.2s) + film countdown (3s) before the first photo */
+    --d: 5s;        /* seconds per photo */
+    --n: 13;        /* number of photos */
+    --intro: 7.6s;  /* envelope (4.2s) + film countdown (3s) before the first photo; 7.6 + 13×5 ≈ 73s of the 80s song */
     --hand: 'Amatic SC', 'Suez One', 'Arial Hebrew', cursive;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
     font-family: 'Rubik', 'Arial Hebrew', Arial, sans-serif;
-    background: radial-gradient(ellipse at 50% 30%, var(--bg2), var(--bg1) 70%) var(--bg1);
+    background: radial-gradient(ellipse at 50% 40%, #3a2418, var(--film) 75%) var(--film);
     color: var(--paper);
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
@@ -52,9 +54,9 @@
   #hearts { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
   .heart {
     position: absolute; bottom: -40px;
-    color: rgba(255, 170, 190, .55);
+    color: rgba(233, 194, 122, .45);
     animation: rise linear forwards;
-    filter: drop-shadow(0 0 6px rgba(255,120,150,.5));
+    filter: drop-shadow(0 0 6px rgba(255,180,90,.35));
   }
   @keyframes rise {
     0%   { transform: translateY(0) translateX(0) rotate(0); opacity: 0; }
@@ -75,14 +77,15 @@
   }
 
   .hint {
-    font-family: 'Suez One', 'Arial Hebrew', serif;
-    font-size: clamp(20px, 5vw, 28px);
+    font-family: var(--hand); font-weight: 700;
+    font-size: clamp(44px, 12vw, 68px); line-height: 1;
     color: var(--gold);
+    text-shadow: 0 0 24px rgba(233,194,122,.3);
     text-align: center;
     animation: pulse 2.2s ease-in-out infinite;
     transition: opacity .5s;
   }
-  .hint small { display: block; font-family: 'Rubik', Arial, sans-serif; font-size: 15px; color: #f5d9df; opacity: .8; margin-top: 6px; }
+  .hint small { display: block; font-family: 'Rubik', Arial, sans-serif; font-weight: 300; font-size: 15px; color: #f1dfc2; opacity: .85; margin-top: 12px; text-shadow: none; }
   @keyframes pulse { 0%,100% { opacity: .75; } 50% { opacity: 1; } }
   #open:checked ~ #envelopeScene .hint { opacity: 0; animation: none; }
 
@@ -100,11 +103,11 @@
     position: absolute; inset: 0;
     background: var(--env-dark);
     border-radius: 6px;
-    box-shadow: 0 30px 60px rgba(0,0,0,.45);
+    box-shadow: 0 30px 60px rgba(0,0,0,.6), inset 0 0 40px rgba(80,50,20,.35);
   }
   .letter {
     position: absolute; left: 6%; right: 6%; top: 8%; height: 84%;
-    background: linear-gradient(var(--paper), var(--paper-dark));
+    background: radial-gradient(ellipse at 70% 20%, rgba(150,100,40,.12), transparent 60%), linear-gradient(var(--paper), var(--paper-dark));
     border-radius: 4px;
     z-index: 2;
     color: var(--ink);
@@ -114,8 +117,8 @@
     box-shadow: 0 4px 14px rgba(0,0,0,.15);
     opacity: 0;
   }
-  .letter h2 { font-family: 'Suez One', 'Arial Hebrew', serif; font-size: clamp(20px, 5.4vw, 30px); color: var(--seal); }
-  .letter p  { font-size: clamp(13px, 3.4vw, 16px); margin-top: 8px; line-height: 1.5; }
+  .letter h2 { font-family: var(--hand); font-weight: 700; font-size: clamp(32px, 9vw, 48px); line-height: 1; color: var(--seal); }
+  .letter p  { font-family: var(--hand); font-weight: 700; font-size: clamp(20px, 5.6vw, 28px); margin-top: 6px; line-height: 1.1; color: var(--ink); }
   #open:checked ~ #envelopeScene .letter { opacity: 1; transform: translateY(-62%); z-index: 4; transition-delay: .65s; }
 
   .env-front { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: 6px; overflow: hidden; }
@@ -170,15 +173,12 @@
     opacity: 0; pointer-events: none;
   }
 
-  .step { position: absolute; opacity: 0; pointer-events: none; }
-
-  /* ---------- the show: old film countdown, then polaroids she flips through ---------- */
+  /* ---------- the show: old film countdown, then polaroids dropping onto a pile ---------- */
   #show {
     position: fixed; inset: 0; z-index: 3;
     opacity: 0; visibility: hidden;
     background: radial-gradient(ellipse at 50% 40%, #3a2418, var(--film) 75%) var(--film);
     transition: opacity .6s ease, visibility 0s .6s;
-    touch-action: pan-y;
   }
   #open:checked ~ #show { opacity: 1; visibility: visible; transition-delay: 4.2s, 0s; }
 
@@ -187,7 +187,6 @@
     position: absolute; inset: 0; z-index: 50;
     display: grid; place-items: center;
     background: radial-gradient(circle, #dcc8a0, #8f7654 80%);
-    pointer-events: none;
   }
   #open:checked ~ #show .leader { animation: leaderOut .5s ease 7.2s both; }
   @keyframes leaderOut { to { opacity: 0; visibility: hidden; } }
@@ -218,25 +217,21 @@
   #open:checked ~ #show .num { animation: blink 1s linear var(--t); }
   @keyframes blink { 0%, 92% { opacity: 1; } 100% { opacity: 0; } }
 
-  /* one slide = one polaroid; hidden until it is the current step or already on the pile */
+  /* one slide = one polaroid. Slides stack, so earlier photos stay on the pile underneath. */
   .slide {
-    --delay: .15s;
+    --start: calc(var(--intro) + var(--i) * var(--d));
     position: absolute; inset: 0;
-    visibility: hidden; pointer-events: none;
+    z-index: calc(var(--i) + 1);
+    pointer-events: none;
   }
-  .slide:nth-of-type(1) { z-index: 1; }  .slide:nth-of-type(2) { z-index: 2; }  .slide:nth-of-type(3) { z-index: 3; }
-  .slide:nth-of-type(4) { z-index: 4; }  .slide:nth-of-type(5) { z-index: 5; }  .slide:nth-of-type(6) { z-index: 6; }
-  .slide:nth-of-type(7) { z-index: 7; }  .slide:nth-of-type(8) { z-index: 8; }  .slide:nth-of-type(9) { z-index: 9; }
-  .slide:nth-of-type(10) { z-index: 10; } .slide:nth-of-type(11) { z-index: 11; } .slide:nth-of-type(12) { z-index: 12; }
-  .slide:nth-of-type(13) { z-index: 13; }
-
-  .leak {   /* projector light leak / film burn when a photo arrives */
-    position: absolute; inset: 0; z-index: 3; opacity: 0; pointer-events: none;
+  .leak {   /* projector light leak / film burn at the cut */
+    position: absolute; inset: 0; z-index: 3; opacity: 0;
     background:
       radial-gradient(ellipse at var(--lx, 85%) 20%, rgba(255,200,120,.95), rgba(255,120,40,.55) 30%, transparent 65%),
       radial-gradient(ellipse at 10% 90%, rgba(255,90,40,.45), transparent 55%);
     mix-blend-mode: screen;
   }
+  #open:checked ~ #show .leak { animation: leak 1.6s ease-out calc(var(--start) - .3s) both; }
   @keyframes leak {
     0%   { opacity: 0; }
     20%  { opacity: 1; }
@@ -244,9 +239,8 @@
     50%  { opacity: .85; }
     100% { opacity: 0; }
   }
-
   .polaroid {
-    --pw: min(82vw, 54vh);   /* border sized from the polaroid itself, not the screen */
+    --pw: min(82vw, 54vh);   /* % padding would follow the screen width, so size the border from the polaroid itself */
     position: absolute; left: 50%; top: 46%;
     width: var(--pw);
     padding: calc(var(--pw) * .045) calc(var(--pw) * .045) calc(var(--pw) * .15);
@@ -254,17 +248,28 @@
     box-shadow: 0 18px 40px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.4);
     opacity: 0;
     transform: translate(-50%, -50%) translate(var(--x), 0) rotate(var(--r));
-    transition: filter .8s ease;
-    cursor: pointer;
-    display: block;
+  }
+  #open:checked ~ #show .polaroid {
+    animation:
+      drop 1.5s cubic-bezier(.2,.9,.3,1) var(--start) both,
+      sink 1.6s ease calc(var(--start) + var(--d) + .2s) forwards;
   }
   @keyframes drop {
     0%   { opacity: 0; transform: translate(-50%, -50%) translate(var(--x), -8vh) rotate(calc(var(--r) + 12deg)) scale(1.3); }
     55%  { opacity: 1; transform: translate(-50%, -50%) translate(var(--x), 0)    rotate(calc(var(--r) - 1.5deg)) scale(.98); }
     100% { opacity: 1; transform: translate(-50%, -50%) translate(var(--x), 0)    rotate(var(--r)) scale(1); }
   }
+  @keyframes sink { to { filter: brightness(.45) sepia(.5); } }
   .frame { position: relative; aspect-ratio: 3 / 4; overflow: hidden; background: #2b2420; }
-  .photo { width: 100%; height: 100%; background: var(--src) center 30% / cover no-repeat; }
+  .photo {
+    width: 100%; height: 100%;
+    background: var(--src) center 30% / cover no-repeat;
+  }
+  #open:checked ~ #show .photo {
+    animation:
+      develop 3.8s ease-out calc(var(--start) + .2s) both,
+      drift calc(var(--d) + 2s) linear var(--start) both;
+  }
   /* like a Polaroid developing: pale sepia haze slowly turning into colour */
   @keyframes develop {
     0%   { filter: sepia(1) brightness(1.9) contrast(.45) saturate(.3) blur(3px); }
@@ -272,7 +277,6 @@
     100% { filter: sepia(.15) brightness(1) contrast(1.05) saturate(1.05) blur(0); }
   }
   @keyframes drift { from { transform: scale(1.1); } to { transform: scale(1); } }
-
   /* the letter, written over the photo one word at a time */
   .words {
     position: absolute; left: 0; right: 0; bottom: 0;
@@ -285,192 +289,17 @@
     text-shadow: 0 2px 8px rgba(0,0,0,.8);
   }
   .w { display: inline-block; opacity: 0; }
+  #open:checked ~ #show .w { animation: wordIn 1.1s ease calc(var(--start) + 1.4s + var(--w) * .3s) both; }
+  #open:checked ~ #show .words { animation: fadeOut .8s ease calc(var(--start) + var(--d) + .2s) forwards; }
   @keyframes wordIn {
     from { opacity: 0; filter: blur(6px); transform: translateY(.25em); }
     to   { opacity: 1; filter: blur(0);   transform: none; }
   }
-  .count {
-    display: block; text-align: center;
-    font-family: var(--hand); font-weight: 700; font-size: calc(var(--pw) * .075);
-    color: var(--pen); opacity: 0;
-    padding-top: calc(var(--pw) * .03);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* arrows: in Hebrew "forward" is to the left */
-  .nav {
-    position: absolute; top: 46%; z-index: 40;
-    width: 48px; height: 48px; margin-top: -24px;
-    display: grid; place-items: center;
-    border-radius: 50%;
-    background: rgba(20,10,4,.55); border: 1px solid rgba(233,194,122,.7);
-    color: var(--gold); font-size: 30px; line-height: 1;
-    cursor: pointer; opacity: 0;
-    backdrop-filter: blur(4px);
-  }
-  .nav.next { left: max(8px, env(safe-area-inset-left)); }
-  .nav.prev { right: max(8px, env(safe-area-inset-right)); }
-  .nav:hover { background: rgba(60,30,10,.75); }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-  .nav-hint {
-    position: absolute; left: 16px; right: 16px; top: max(64px, 7vh); z-index: 40;
-    text-align: center; font-size: clamp(15px, 4vw, 18px); color: #f5e3c8;
-    text-shadow: 0 1px 6px rgba(0,0,0,.9);
-    opacity: 0; pointer-events: none;
-  }
-  @keyframes hintInOut { 0% { opacity: 0; } 15%, 80% { opacity: 1; } 100% { opacity: 0; } }
-
-
-  /* ---------- which polaroid is where (generated per step) ---------- */
-  /* the current photo */
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1),
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(2),
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(3),
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(4),
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(5),
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(6),
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(7),
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(8),
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(9),
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(10),
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(11),
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(12),
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(13) {
-    visibility: visible; pointer-events: auto; z-index: 30;
-  }
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) .polaroid,
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(2) .polaroid,
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(3) .polaroid,
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(4) .polaroid,
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(5) .polaroid,
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(6) .polaroid,
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(7) .polaroid,
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(8) .polaroid,
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(9) .polaroid,
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(10) .polaroid,
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(11) .polaroid,
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(12) .polaroid,
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(13) .polaroid {
-    animation: drop 1.4s cubic-bezier(.2,.9,.3,1) var(--delay) both;
-  }
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) .photo,
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(2) .photo,
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(3) .photo,
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(4) .photo,
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(5) .photo,
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(6) .photo,
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(7) .photo,
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(8) .photo,
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(9) .photo,
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(10) .photo,
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(11) .photo,
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(12) .photo,
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(13) .photo {
-    animation: develop 3.6s ease-out calc(var(--delay) + .2s) both, drift 9s ease-out var(--delay) both;
-  }
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) .leak,
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(2) .leak,
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(3) .leak,
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(4) .leak,
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(5) .leak,
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(6) .leak,
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(7) .leak,
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(8) .leak,
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(9) .leak,
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(10) .leak,
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(11) .leak,
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(12) .leak,
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(13) .leak {
-    animation: leak 1.6s ease-out calc(var(--delay) - .2s) both;
-  }
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) .w,
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(2) .w,
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(3) .w,
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(4) .w,
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(5) .w,
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(6) .w,
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(7) .w,
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(8) .w,
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(9) .w,
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(10) .w,
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(11) .w,
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(12) .w,
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(13) .w {
-    animation: wordIn 1.1s ease calc(var(--delay) + 1.6s + var(--w) * .32s) both;
-  }
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) .nav,
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(2) .nav,
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(3) .nav,
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(4) .nav,
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(5) .nav,
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(6) .nav,
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(7) .nav,
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(8) .nav,
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(9) .nav,
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(10) .nav,
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(11) .nav,
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(12) .nav,
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(13) .nav,
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) .count,
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(2) .count,
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(3) .count,
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(4) .count,
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(5) .count,
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(6) .count,
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(7) .count,
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(8) .count,
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(9) .count,
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(10) .count,
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(11) .count,
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(12) .count,
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(13) .count {
-    animation: fadeIn .8s ease calc(var(--delay) + 1s) both;
-  }
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) .nav-hint {
-    animation: hintInOut 6s ease calc(var(--delay) + 3.5s) both;
-  }
-  /* the first photo waits for the film countdown, but only on the very first opening */
-  #open:checked ~ #s0:checked ~ #show .slide:nth-of-type(1) { --delay: var(--intro); }
-
-  /* photos already seen stay on the pile, darker */
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(-n+1),
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(-n+2),
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(-n+3),
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(-n+4),
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(-n+5),
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(-n+6),
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(-n+7),
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(-n+8),
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(-n+9),
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(-n+10),
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(-n+11),
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(-n+12),
-  #open:checked ~ #s13:checked ~ #show .slide {
-    visibility: visible;
-  }
-  #open:checked ~ #s1:checked ~ #show .slide:nth-of-type(-n+1) .polaroid,
-  #open:checked ~ #s2:checked ~ #show .slide:nth-of-type(-n+2) .polaroid,
-  #open:checked ~ #s3:checked ~ #show .slide:nth-of-type(-n+3) .polaroid,
-  #open:checked ~ #s4:checked ~ #show .slide:nth-of-type(-n+4) .polaroid,
-  #open:checked ~ #s5:checked ~ #show .slide:nth-of-type(-n+5) .polaroid,
-  #open:checked ~ #s6:checked ~ #show .slide:nth-of-type(-n+6) .polaroid,
-  #open:checked ~ #s7:checked ~ #show .slide:nth-of-type(-n+7) .polaroid,
-  #open:checked ~ #s8:checked ~ #show .slide:nth-of-type(-n+8) .polaroid,
-  #open:checked ~ #s9:checked ~ #show .slide:nth-of-type(-n+9) .polaroid,
-  #open:checked ~ #s10:checked ~ #show .slide:nth-of-type(-n+10) .polaroid,
-  #open:checked ~ #s11:checked ~ #show .slide:nth-of-type(-n+11) .polaroid,
-  #open:checked ~ #s12:checked ~ #show .slide:nth-of-type(-n+12) .polaroid,
-  #open:checked ~ #s13:checked ~ #show .slide .polaroid {
-    opacity: 1; filter: brightness(.42) sepia(.55);
-  }
+  @keyframes fadeOut { to { opacity: 0; } }
+  @keyframes write { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
 
   /* ---------- old film layer: grain, scratches, flicker, vignette ---------- */
-  #film {
-    position: fixed; inset: 0; z-index: 8; pointer-events: none;
-    opacity: 0; visibility: hidden;
-  }
-  #open:checked ~ #film { opacity: 1; visibility: visible; transition: opacity 1s ease 4.2s; }
+  #film { position: fixed; inset: 0; z-index: 8; pointer-events: none; }
   #film > div { position: absolute; inset: 0; }
   .grain {
     background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
@@ -505,19 +334,22 @@
   @keyframes flicker {
     0% { opacity: .2; } 25% { opacity: 1; } 50% { opacity: .5; } 75% { opacity: .9; }
   }
-  .vignette { background: radial-gradient(ellipse at center, transparent 45%, rgba(20,10,4,.7) 100%); }
+  .vignette {
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(20,10,4,.7) 100%);
+  }
 
-  /* ---------- finale (the step after the last photo) ---------- */
+  /* ---------- finale ---------- */
   #finale {
+    --T: calc(var(--intro) + var(--n) * var(--d));
     position: fixed; inset: 0; z-index: 6;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-    text-align: center; padding: 16px 16px 90px;
+    text-align: center; padding: 16px;
     background: radial-gradient(ellipse at 50% 35%, #3a2418, var(--film) 75%) var(--film);
     opacity: 0; visibility: hidden;
   }
-  #open:checked ~ #s13:checked ~ #finale {
+  #open:checked ~ #finale {
     opacity: 1; visibility: visible;
-    transition: opacity 1.6s ease .3s, visibility 0s .3s;
+    transition: opacity 2.2s ease var(--T), visibility 0s var(--T);
   }
   #finale h1 {
     font-family: var(--hand); font-weight: 700;
@@ -526,14 +358,13 @@
     text-shadow: 0 0 30px rgba(233,194,122,.35);
     clip-path: inset(0 0 0 100%);
   }
-  #open:checked ~ #s13:checked ~ #finale h1 { animation: write 2.6s ease-in-out 1s both; }
-  @keyframes write { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
+  #open:checked ~ #finale h1 { animation: write 2.6s ease-in-out calc(var(--T) + 1s) both; }
   #finale .line {
     font-size: clamp(18px, 4.8vw, 24px); line-height: 1.6; max-width: 34ch; color: #fbe3e8;
     opacity: 0;
   }
   #finale .line.big { font-family: var(--hand); font-weight: 700; font-size: clamp(30px, 9vw, 48px); color: var(--paper); }
-  #open:checked ~ #s13:checked ~ #finale .line { animation: lineIn 1.8s ease var(--k) both; }
+  #open:checked ~ #finale .line { animation: lineIn 1.8s ease calc(var(--T) + var(--k)) both; }
   @keyframes lineIn { from { opacity: 0; filter: blur(8px); transform: translateY(12px); } to { opacity: 1; filter: blur(0); transform: none; } }
   .btn {
     font-family: 'Rubik', Arial, sans-serif; font-size: 16px; color: var(--paper);
@@ -542,7 +373,7 @@
   }
   .btn:hover { background: rgba(255,255,255,.16); }
   #finale .btn { opacity: 0; margin-top: 10px; }
-  #open:checked ~ #s13:checked ~ #finale .btn { animation: lineIn 1s ease 8s both; }
+  #open:checked ~ #finale .btn { animation: lineIn 1s ease calc(var(--T) + 8s) both; }
 
   /* ---------- music controls (JS) ---------- */
   #musicBtn {
@@ -558,13 +389,13 @@
   }
   .noscript {
     position: fixed; z-index: 20; left: 16px; right: 16px; top: 16px;
-    text-align: center; font-size: 14px; color: #f5d9df; opacity: .8;
+    text-align: center; font-size: 14px; color: #f1dfc2; opacity: .8;
   }
-  .nav:focus-visible, .polaroid:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
 
   @media (prefers-reduced-motion: reduce) {
     .envelope, .hint { animation: none; }
     #film .grain, #film .scratches, #film .flicker { animation: none; }
+    #open:checked ~ #show .photo { animation: develop 3.8s ease-out calc(var(--start) + .2s) both; }
   }
 </style>
 </head>
@@ -572,20 +403,6 @@
 
 <div id="hearts"></div>
 <input type="checkbox" id="open" aria-label="פתחי את המעטפה">
-<input type="radio" name="step" id="s0" class="step" checked aria-label="תמונה 1">
-<input type="radio" name="step" id="s1" class="step" aria-label="תמונה 2">
-<input type="radio" name="step" id="s2" class="step" aria-label="תמונה 3">
-<input type="radio" name="step" id="s3" class="step" aria-label="תמונה 4">
-<input type="radio" name="step" id="s4" class="step" aria-label="תמונה 5">
-<input type="radio" name="step" id="s5" class="step" aria-label="תמונה 6">
-<input type="radio" name="step" id="s6" class="step" aria-label="תמונה 7">
-<input type="radio" name="step" id="s7" class="step" aria-label="תמונה 8">
-<input type="radio" name="step" id="s8" class="step" aria-label="תמונה 9">
-<input type="radio" name="step" id="s9" class="step" aria-label="תמונה 10">
-<input type="radio" name="step" id="s10" class="step" aria-label="תמונה 11">
-<input type="radio" name="step" id="s11" class="step" aria-label="תמונה 12">
-<input type="radio" name="step" id="s12" class="step" aria-label="תמונה 13">
-<input type="radio" name="step" id="s13" class="step" aria-label="סיום">
 
 <!-- Envelope -->
 <section id="envelopeScene">
@@ -602,7 +419,7 @@
   </div>
 </section>
 
-<!-- Show. Order here = order on screen. --r/--x = how each polaroid lands on the pile. -->
+<!-- Show. Order here = order on screen. --i counts from 0, --r/--x = how the polaroid lands on the pile, words = the letter line on that photo. -->
 <section id="show">
   <div class="leader">
     <div class="ring">
@@ -613,113 +430,22 @@
     </div>
   </div>
 
-  <article class="slide" style="--r:-4deg; --x:-1.5vw; --lx:85%; --src:url('photos/1.jpg')">
-    <div class="leak"></div><p class="nav-hint">החליקי או לחצי על החץ כדי להמשיך</p>
-    <label class="polaroid" for="s1">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">אישתי</span> <span class="w" style="--w:1">היקרה,</span></p></div>
-      <span class="count">1 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s1" aria-label="התמונה הבאה">‹</label>
-  </article>
-  <article class="slide" style="--r:3deg; --x:1.5vw; --lx:15%; --src:url('photos/2.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s2">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">לא</span> <span class="w" style="--w:1">משנה</span> <span class="w" style="--w:2">כמה</span> <span class="w" style="--w:3">שנים</span> <span class="w" style="--w:4">נהיה</span> <span class="w" style="--w:5">ביחד,</span></p></div>
-      <span class="count">2 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s2" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s0" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:-2deg; --x:-1vw; --lx:85%; --src:url('photos/3.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s3">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">תמיד</span> <span class="w" style="--w:1">נישאר</span> <span class="w" style="--w:2">אותו</span> <span class="w" style="--w:3">זוג</span> <span class="w" style="--w:4">שהכיר</span> <span class="w" style="--w:5">בזמן</span> <span class="w" style="--w:6">הצבא.</span></p></div>
-      <span class="count">3 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s3" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s1" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:4deg; --x:2vw; --lx:15%; --src:url('photos/4.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s4">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">עברנו</span> <span class="w" style="--w:1">המון</span> <span class="w" style="--w:2">ביחד,</span> <span class="w" style="--w:3">בשמחה</span> <span class="w" style="--w:4">ובעצב,</span></p></div>
-      <span class="count">4 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s4" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s2" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:-3deg; --x:-2vw; --lx:85%; --src:url('photos/11.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s5">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">ולא</span> <span class="w" style="--w:1">משנה</span> <span class="w" style="--w:2">מה</span> <span class="w" style="--w:3">עבר</span> <span class="w" style="--w:4">עלינו</span> <span class="w" style="--w:5">–</span> <span class="w" style="--w:6">תמיד</span> <span class="w" style="--w:7">התגברנו.</span></p></div>
-      <span class="count">5 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s5" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s3" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:2deg; --x:1vw; --lx:15%; --src:url('photos/5.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s6">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">את</span> <span class="w" style="--w:1">האהבה</span> <span class="w" style="--w:2">הכי</span> <span class="w" style="--w:3">גדולה</span> <span class="w" style="--w:4">שלי,</span></p></div>
-      <span class="count">6 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s6" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s4" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:-4deg; --x:-1.5vw; --lx:85%; --src:url('photos/12.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s7">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">וההשראה</span> <span class="w" style="--w:1">שלי</span> <span class="w" style="--w:2">להיות</span> <span class="w" style="--w:3">הגבר</span> <span class="w" style="--w:4">המושלם.</span></p></div>
-      <span class="count">7 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s7" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s5" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:3deg; --x:1.5vw; --lx:15%; --src:url('photos/13.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s8">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">אני</span> <span class="w" style="--w:1">יודע</span> <span class="w" style="--w:2">שעברנו</span> <span class="w" style="--w:3">תקופה</span> <span class="w" style="--w:4">לא</span> <span class="w" style="--w:5">קלה,</span></p></div>
-      <span class="count">8 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s8" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s6" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:-2deg; --x:-1vw; --lx:85%; --src:url('photos/8.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s9">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">אבל</span> <span class="w" style="--w:1">אני</span> <span class="w" style="--w:2">מבטיח</span> <span class="w" style="--w:3">לך</span> <span class="w" style="--w:4">–</span></p></div>
-      <span class="count">9 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s9" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s7" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:3deg; --x:1.5vw; --lx:15%; --src:url('photos/10.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s10">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">מכאן</span> <span class="w" style="--w:1">אנחנו</span> <span class="w" style="--w:2">רק</span> <span class="w" style="--w:3">נעלה,</span></p></div>
-      <span class="count">10 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s10" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s8" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:-3deg; --x:-1.5vw; --lx:85%; --src:url('photos/7.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s11">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">ונגשים</span> <span class="w" style="--w:1">את</span> <span class="w" style="--w:2">כל</span> <span class="w" style="--w:3">החלומות</span> <span class="w" style="--w:4">שלנו.</span></p></div>
-      <span class="count">11 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s11" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s9" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:2deg; --x:1vw; --lx:15%; --src:url('photos/6.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s12">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">כי</span> <span class="w" style="--w:1">תראי</span> <span class="w" style="--w:2">מה</span> <span class="w" style="--w:3">כבר</span> <span class="w" style="--w:4">בנינו</span> <span class="w" style="--w:5">ביחד…</span></p></div>
-      <span class="count">12 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s12" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s10" aria-label="התמונה הקודמת">›</label>
-  </article>
-  <article class="slide" style="--r:0deg; --x:0vw; --lx:85%; --src:url('photos/9.jpg')">
-    <div class="leak"></div>
-    <label class="polaroid" for="s13">
-      <div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">איזה</span> <span class="w" style="--w:1">בית</span> <span class="w" style="--w:2">ואיזו</span> <span class="w" style="--w:3">משפחה</span> <span class="w" style="--w:4">הקמנו</span> <span class="w" style="--w:5">❤</span></p></div>
-      <span class="count">13 מתוך 13</span>
-    </label>
-    <label class="nav next" for="s13" aria-label="התמונה הבאה">‹</label><label class="nav prev" for="s11" aria-label="התמונה הקודמת">›</label>
-  </article>
+  <div class="slide" style="--i:0; --r:-4deg; --x:-2vw; --src:url('photos/1.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">אישתי</span> <span class="w" style="--w:1">היקרה,</span></p></div></figure></div>
+  <div class="slide" style="--i:1; --r:3deg; --x:2vw; --lx:15%; --src:url('photos/2.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">לא</span> <span class="w" style="--w:1">משנה</span> <span class="w" style="--w:2">כמה</span> <span class="w" style="--w:3">שנים</span> <span class="w" style="--w:4">נהיה</span> <span class="w" style="--w:5">ביחד,</span></p></div></figure></div>
+  <div class="slide" style="--i:2; --r:-2deg; --x:-1vw; --src:url('photos/3.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">תמיד</span> <span class="w" style="--w:1">נישאר</span> <span class="w" style="--w:2">אותו</span> <span class="w" style="--w:3">זוג</span> <span class="w" style="--w:4">שהכיר</span> <span class="w" style="--w:5">בזמן</span> <span class="w" style="--w:6">הצבא.</span></p></div></figure></div>
+  <div class="slide" style="--i:3; --r:5deg; --x:3vw; --lx:15%; --src:url('photos/4.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">עברנו</span> <span class="w" style="--w:1">המון</span> <span class="w" style="--w:2">ביחד,</span> <span class="w" style="--w:3">בשמחה</span> <span class="w" style="--w:4">ובעצב,</span></p></div></figure></div>
+  <div class="slide" style="--i:4; --r:-5deg; --x:-3vw; --src:url('photos/11.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">ולא</span> <span class="w" style="--w:1">משנה</span> <span class="w" style="--w:2">מה</span> <span class="w" style="--w:3">עבר</span> <span class="w" style="--w:4">עלינו</span> <span class="w" style="--w:5">–</span> <span class="w" style="--w:6">תמיד</span> <span class="w" style="--w:7">התגברנו.</span></p></div></figure></div>
+  <div class="slide" style="--i:5; --r:2deg; --x:1vw; --lx:15%; --src:url('photos/5.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">את</span> <span class="w" style="--w:1">האהבה</span> <span class="w" style="--w:2">הכי</span> <span class="w" style="--w:3">גדולה</span> <span class="w" style="--w:4">שלי,</span></p></div></figure></div>
+  <div class="slide" style="--i:6; --r:-3deg; --x:-2vw; --src:url('photos/12.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">וההשראה</span> <span class="w" style="--w:1">שלי</span> <span class="w" style="--w:2">להיות</span> <span class="w" style="--w:3">הגבר</span> <span class="w" style="--w:4">המושלם.</span></p></div></figure></div>
+  <div class="slide" style="--i:7; --r:4deg; --x:2vw; --lx:15%; --src:url('photos/13.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">אני</span> <span class="w" style="--w:1">יודע</span> <span class="w" style="--w:2">שעברנו</span> <span class="w" style="--w:3">תקופה</span> <span class="w" style="--w:4">לא</span> <span class="w" style="--w:5">קלה,</span></p></div></figure></div>
+  <div class="slide" style="--i:8; --r:-2deg; --x:-1vw; --src:url('photos/8.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">אבל</span> <span class="w" style="--w:1">אני</span> <span class="w" style="--w:2">מבטיח</span> <span class="w" style="--w:3">לך</span> <span class="w" style="--w:4">–</span></p></div></figure></div>
+  <div class="slide" style="--i:9; --r:3deg; --x:2vw; --lx:15%; --src:url('photos/10.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">מכאן</span> <span class="w" style="--w:1">אנחנו</span> <span class="w" style="--w:2">רק</span> <span class="w" style="--w:3">נעלה,</span></p></div></figure></div>
+  <div class="slide" style="--i:10; --r:-4deg; --x:-2vw; --src:url('photos/7.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">ונגשים</span> <span class="w" style="--w:1">את</span> <span class="w" style="--w:2">כל</span> <span class="w" style="--w:3">החלומות</span> <span class="w" style="--w:4">שלנו.</span></p></div></figure></div>
+  <div class="slide" style="--i:11; --r:2deg; --x:1vw; --lx:15%; --src:url('photos/6.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">כי</span> <span class="w" style="--w:1">תראי</span> <span class="w" style="--w:2">מה</span> <span class="w" style="--w:3">כבר</span> <span class="w" style="--w:4">בנינו</span> <span class="w" style="--w:5">ביחד…</span></p></div></figure></div>
+  <div class="slide" style="--i:12; --r:0deg; --x:0vw; --src:url('photos/9.jpg')"><div class="leak"></div><figure class="polaroid"><div class="frame"><div class="photo" role="img"></div><p class="words"><span class="w" style="--w:0">איזה</span> <span class="w" style="--w:1">בית</span> <span class="w" style="--w:2">ואיזו</span> <span class="w" style="--w:3">משפחה</span> <span class="w" style="--w:4">הקמנו</span> <span class="w" style="--w:5">❤</span></p></div></figure></div>
 </section>
 
-<!-- Old film texture over everything after the envelope opens -->
+<!-- Old film texture over everything, from the first frame -->
 <div id="film"><div class="grain"></div><div class="scratches"></div><div class="flicker"></div><div class="vignette"></div></div>
 
 <!-- Finale -->
@@ -728,7 +454,7 @@
   <p class="line" style="--k:3.2s">ותודה על האהבה האינסופית שאת נותנת לי ולמשפחה שלנו,</p>
   <p class="line" style="--k:4.8s">ועל האמונה והגב שאת נותנת לי ❤</p>
   <p class="line big" style="--k:6.4s">יום נישואין שמח</p>
-  <label class="btn" for="s0" id="replay">לצפות שוב ↺</label>
+  <label class="btn" for="open">לצפות שוב ↺</label>
 </section>
 
 <button id="musicBtn" aria-label="השתק / הפעל מוזיקה">🔊</button>
@@ -767,7 +493,6 @@ const CONFIG = {
   /* ---------- music ---------- */
   const audio = new Audio(CONFIG.audioFile);
   audio.preload = 'auto';
-  audio.loop = true;   // she sets the pace now, so the song keeps playing until she's done
   audio.onplaying = () => { $('tapMusic').style.display = 'none'; $('musicBtn').style.display = 'block'; };
   function playMusic() {
     try { audio.currentTime = CONFIG.musicStartSeconds; } catch (e) {}
@@ -821,32 +546,6 @@ const CONFIG = {
   seal.addEventListener('pointercancel', () => { dragging = false; seal.classList.remove('dragging'); seal.style.transform = ''; });
   // The seal only opens; never let a late click close it again.
   seal.addEventListener('click', e => { if (open.checked) e.preventDefault(); });
-
-  /* ---------- flipping through the photos: swipe or keyboard (arrows and taps are plain <label>s) ---------- */
-  const steps = [...document.querySelectorAll('.step')];
-  const current = () => steps.findIndex(r => r.checked);
-  function go(k) {
-    if (!open.checked || k < 0 || k >= steps.length) return;
-    steps[k].checked = true;
-  }
-  // In Hebrew "forward" is leftward: swipe left / left arrow = next photo.
-  const show = $('show');
-  let tx = null, ty = 0;
-  show.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
-  show.addEventListener('touchend', e => {
-    if (tx === null) return;
-    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
-    tx = null;
-    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
-    e.preventDefault();   // a swipe must not also count as a tap on the photo
-    go(current() + (dx < 0 ? 1 : -1));
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft') go(current() + 1);
-    if (e.key === 'ArrowRight') go(current() - 1);
-  });
-  // "Watch again" skips the film countdown the second time round.
-  $('replay').addEventListener('click', () => document.documentElement.style.setProperty('--intro', '.15s'));
 })();
 </script>
 </body>
