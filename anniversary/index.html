@@ -321,6 +321,8 @@
 const CONFIG = {
   // השיר: בר צברי - ככה באמת
   youtubeId: 'Ze63vfpYAV4',
+  // אם הסרטון הראשי חסום להטמעה — ינסה את אלה לפי הסדר
+  youtubeFallbackIds: ['c_rx1efu52w'],
   // אופציה אמינה יותר: שים קובץ mp3 של השיר בתיקייה (למשל 'song.mp3') וכתוב את השם כאן.
   // אם מוגדר — הוא ינוגן במקום יוטיוב.
   audioFile: '',
@@ -331,12 +333,16 @@ const CONFIG = {
   letterText: 'לאישה הכי יפה בעולם ❤',
 
   // התמונות: שימו את הקבצים בתיקייה photos/ ועדכנו כאן את השמות והכיתובים
-  photos: [
+  photos: [   // סדר ההצגה = הסדר כאן
     { src: 'photos/1.jpg', caption: 'איפה שהכל התחיל' },
     { src: 'photos/2.jpg', caption: 'מחובקים, תמיד' },
     { src: 'photos/3.jpg', caption: 'הפרצופים שלך 😘' },
     { src: 'photos/4.jpg', caption: 'כל רגע קטן איתך' },
     { src: 'photos/5.jpg', caption: 'הלילות שלנו' },
+    { src: 'photos/8.jpg', caption: 'את והטבעת 💍' },
+    { src: 'photos/7.jpg', caption: 'נשיקה ממך' },
+    { src: 'photos/6.jpg', caption: 'יחד, בכל שמחה' },
+    { src: 'photos/9.jpg', caption: 'והמשפחה שבנינו ❤' },
   ],
 
   finaleTitle: 'אני אוהב אותך',
@@ -369,6 +375,7 @@ const CONFIG = {
   (function loop() { spawnHeart(); setTimeout(loop, heartRate * (.5 + Math.random())); })();
 
   /* ---------- YouTube player (created on load so play() runs inside the tap) ---------- */
+  const fallbacks = [...(CONFIG.youtubeFallbackIds || [])];
   let player, playerReady = false, wantPlay = false, muted = false;
   window.onYouTubeIframeAPIReady = () => {
     player = new YT.Player('yt', {
@@ -376,6 +383,13 @@ const CONFIG = {
       playerVars: { playsinline: 1, controls: 0, start: CONFIG.musicStartSeconds, rel: 0 },
       events: {
         onReady: () => { playerReady = true; if (wantPlay) playMusic(); },
+        // 2/5/100/101/150: invalid, unavailable or embedding disabled → try the next song
+        onError: () => {
+          const nextId = fallbacks.shift();
+          if (!nextId) return;
+          wantPlay ? player.loadVideoById(nextId, CONFIG.musicStartSeconds)
+                   : player.cueVideoById(nextId, CONFIG.musicStartSeconds);
+        },
         onStateChange: e => {
           if (e.data === YT.PlayerState.PLAYING) { $('tapMusic').style.display = 'none'; $('musicBtn').style.display = 'block'; }
           if (e.data === YT.PlayerState.ENDED) { player.seekTo(CONFIG.musicStartSeconds); player.playVideo(); }
