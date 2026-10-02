@@ -10,7 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Rubik:wght@300;400&display=swap" rel="stylesheet">
 <style>
   /* =========================================================
-     ✏️ ערוך כאן: כותרות, תאריך וטקסט המכתב נמצאים בסקריפט למטה (CONFIG)
+     The whole show (envelope -> slides -> finale) runs on CSS alone,
+     driven by the #open checkbox, so it works even in previews that
+     block JavaScript. JS only adds music, sticker dragging and hearts.
+     ✏️ תמונות וכיתובים: בתוך <section id="show"> למטה.
+     ✏️ קצב: --d = שניות לכל תמונה, --n = מספר התמונות.
      ========================================================= */
   :root {
     --bg1: #2a0f1c;
@@ -19,25 +23,29 @@
     --paper-dark: #efe0cc;
     --env: #e8c9b0;
     --env-dark: #d4ad8f;
-    --env-shadow: #b98d6d;
     --seal: #a3123a;
     --seal-light: #d23a5e;
     --gold: #e9c27a;
     --ink: #4a1f2b;
+
+    --d: 4.5s;      /* seconds per photo: 13 × 4.5s fits the 71s song */
+    --n: 13;        /* number of photos */
+    --intro: 4.6s;  /* envelope animation before the first photo */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
   body {
-    font-family: 'Rubik', sans-serif;
-    background: radial-gradient(ellipse at 50% 30%, var(--bg2), var(--bg1) 70%);
+    font-family: 'Rubik', 'Arial Hebrew', Arial, sans-serif;
+    background: radial-gradient(ellipse at 50% 30%, var(--bg2), var(--bg1) 70%) var(--bg1);
     color: var(--paper);
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     -webkit-user-select: none;
   }
+  #open { position: absolute; opacity: 0; pointer-events: none; }
 
-  /* ---------- floating hearts ---------- */
+  /* ---------- floating hearts (JS) ---------- */
   #hearts { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
   .heart {
     position: absolute; bottom: -40px;
@@ -56,20 +64,24 @@
     position: fixed; inset: 0; z-index: 5;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 36px; padding: 16px;
-    transition: opacity 1.2s ease, transform 1.2s ease;
+    transition: opacity 1.2s ease, transform 1.2s ease, visibility 0s;
   }
-  #envelopeScene.gone { opacity: 0; transform: scale(1.08); pointer-events: none; }
+  #open:checked ~ #envelopeScene {
+    opacity: 0; transform: scale(1.08); pointer-events: none; visibility: hidden;
+    transition-delay: 4.2s, 4.2s, 5.4s;
+  }
 
   .hint {
-    font-family: 'Suez One', serif;
+    font-family: 'Suez One', 'Arial Hebrew', serif;
     font-size: clamp(20px, 5vw, 28px);
     color: var(--gold);
     text-align: center;
     animation: pulse 2.2s ease-in-out infinite;
     transition: opacity .5s;
   }
-  .hint small { display: block; font-family: 'Rubik'; font-size: 15px; color: #f5d9df; opacity: .8; margin-top: 6px; }
+  .hint small { display: block; font-family: 'Rubik', Arial, sans-serif; font-size: 15px; color: #f5d9df; opacity: .8; margin-top: 6px; }
   @keyframes pulse { 0%,100% { opacity: .75; } 50% { opacity: 1; } }
+  #open:checked ~ #envelopeScene .hint { opacity: 0; animation: none; }
 
   .envelope {
     --w: min(86vw, 420px);
@@ -78,7 +90,7 @@
     perspective: 1200px;
     animation: float 4s ease-in-out infinite;
   }
-  .envelope.opening { animation: none; }
+  #open:checked ~ #envelopeScene .envelope { animation: none; }
   @keyframes float { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
 
   .env-back {
@@ -99,29 +111,21 @@
     box-shadow: 0 4px 14px rgba(0,0,0,.15);
     opacity: 0;
   }
-  .envelope.opening .letter { opacity: 1; }
-  .letter h2 { font-family: 'Suez One', serif; font-size: clamp(20px, 5.4vw, 30px); color: var(--seal); }
+  .letter h2 { font-family: 'Suez One', 'Arial Hebrew', serif; font-size: clamp(20px, 5.4vw, 30px); color: var(--seal); }
   .letter p  { font-size: clamp(13px, 3.4vw, 16px); margin-top: 8px; line-height: 1.5; }
-  .envelope.opened .letter { transform: translateY(-62%); z-index: 4; transition-delay: .2s; }
+  #open:checked ~ #envelopeScene .letter { opacity: 1; transform: translateY(-62%); z-index: 4; transition-delay: .65s; }
 
-  /* front pocket: left, right and bottom triangles */
-  .env-front {
-    position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    border-radius: 6px; overflow: hidden;
-  }
-  .env-front::before, .env-front::after {
-    content: ""; position: absolute; inset: 0;
-  }
-  .env-front::before { /* sides */
+  .env-front { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: 6px; overflow: hidden; }
+  .env-front::before, .env-front::after { content: ""; position: absolute; inset: 0; }
+  .env-front::before {
     background:
       linear-gradient(to top right, var(--env) 50%, transparent 50.5%) left / 50.5% 100% no-repeat,
       linear-gradient(to top left,  var(--env) 50%, transparent 50.5%) right / 50.5% 100% no-repeat;
   }
-  .env-front::after { /* bottom */
+  .env-front::after {
     background: var(--env);
     clip-path: polygon(0 100%, 50% 42%, 100% 100%);
     filter: brightness(1.04);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.04);
   }
 
   .flap {
@@ -137,9 +141,9 @@
     clip-path: polygon(0 0, 100% 0, 50% 100%);
     filter: drop-shadow(0 4px 4px rgba(0,0,0,.2));
   }
-  .envelope.opened .flap { transform: rotateX(180deg); z-index: 1; }
+  #open:checked ~ #envelopeScene .flap { transform: rotateX(180deg); z-index: 1; transition-delay: .45s, .95s; }
 
-  /* the wax seal / sticker */
+  /* the wax seal is a <label> for #open, so a tap opens it with or without JS */
   .seal {
     position: absolute; z-index: 6;
     left: 50%; top: 58%;
@@ -148,120 +152,105 @@
     background: radial-gradient(circle at 35% 30%, var(--seal-light), var(--seal) 60%, #6e0a26);
     box-shadow: 0 6px 14px rgba(0,0,0,.4), inset 0 -4px 8px rgba(0,0,0,.3), inset 0 3px 6px rgba(255,255,255,.25);
     display: grid; place-items: center;
-    cursor: grab; touch-action: none;
+    cursor: pointer; touch-action: none;
     transition: transform .25s ease;
   }
-  .seal::before { /* inner wax ring */
-    content: ""; position: absolute; inset: 8px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,.18);
-  }
-  .seal span { font-size: 34px; filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); pointer-events: none; }
+  .seal::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; border: 2px solid rgba(255,255,255,.18); }
+  .seal::after { content: ""; position: absolute; inset: -40px; border-radius: 50%; } /* bigger tap target */
+  .seal span { font-size: 34px; color: #fff; filter: drop-shadow(0 1px 1px rgba(0,0,0,.4)); pointer-events: none; }
   .seal:hover { transform: scale(1.06) rotate(-4deg); }
-  .seal.dragging { cursor: grabbing; transition: none; }
-  .seal.peeled {
+  .seal.dragging { transition: none; }
+  #open:focus-visible ~ #envelopeScene .seal { outline: 3px solid var(--gold); outline-offset: 6px; }
+  #open:checked ~ #envelopeScene .seal {
     transition: transform 1s cubic-bezier(.5,-.3,.6,1), opacity 1s ease;
     transform: translate(-40vw, -70vh) rotate(-260deg) scale(.6) !important;
-    opacity: 0;
+    opacity: 0; pointer-events: none;
   }
 
-  /* ---------- slideshow ---------- */
+  /* ---------- slideshow: each slide fades in over the previous one ---------- */
   #show {
     position: fixed; inset: 0; z-index: 3;
-    opacity: 0; pointer-events: none;
-    transition: opacity 1.5s ease;
+    opacity: 0; visibility: hidden;
     background: #000;
+    transition: opacity 1.5s ease, visibility 0s 1.5s;
   }
-  #show.on { opacity: 1; pointer-events: auto; }
+  #open:checked ~ #show { opacity: 1; visibility: visible; transition-delay: 4.2s, 0s; }
   .slide {
+    --start: calc(var(--intro) + var(--i) * var(--d));
     position: absolute; inset: 0; overflow: hidden;
     opacity: 0;
+    z-index: calc(var(--i) + 1);
   }
   .slide .bg {
     position: absolute; inset: -40px;
-    background-size: cover; background-position: center;
+    background: var(--src) center / cover no-repeat;
     filter: blur(30px) brightness(.55) saturate(1.2);
     transform: scale(1.1);
   }
-  .slide img {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: contain;
+  .slide .photo {   /* the photo is referenced once via --src, so the standalone build embeds it once */
+    position: absolute; inset: 0;
+    background: var(--src) center / contain no-repeat;
     will-change: transform;
   }
-  .slide .vignette {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55));
-  }
-  .slide .fallback {
-    position: absolute; inset: 0; display: grid; place-items: center;
-    background: linear-gradient(135deg, #7b2342, #2a0f1c);
-    font-size: 90px;
-  }
+  .slide .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55)); }
   .caption {
     position: absolute; left: 16px; right: 16px; bottom: max(9vh, 60px);
     text-align: center;
-    font-family: 'Suez One', serif;
+    font-family: 'Suez One', 'Arial Hebrew', serif;
     font-size: clamp(22px, 6vw, 44px);
     color: #fff;
     text-shadow: 0 2px 18px rgba(0,0,0,.8), 0 0 40px rgba(163,18,58,.6);
     opacity: 0;
   }
-  .slide.active .caption { animation: capIn 1.6s 1s ease forwards; }
+  #open:checked ~ #show .slide         { animation: var(--fx) 2s var(--start) both; }
+  #open:checked ~ #show .slide .photo  { animation: var(--kb) calc(var(--d) + 3s) linear var(--start) both; }
+  #open:checked ~ #show .slide .caption{ animation: capIn 1.6s calc(var(--start) + 1s) ease both; }
+
+  @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes blurIn    { from { opacity: 0; filter: blur(25px) brightness(1.6); } to { opacity: 1; filter: blur(0) brightness(1); } }
+  @keyframes circleIn  { from { opacity: 1; clip-path: circle(0% at 50% 50%); } to { opacity: 1; clip-path: circle(80% at 50% 50%); } }
+  @keyframes curtainIn { from { opacity: 1; clip-path: inset(0 50% 0 50%); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+  @keyframes zoomIn    { from { opacity: 0; transform: scale(1.35) rotate(2deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+  @keyframes lightIn   { 0% { opacity: 0; filter: brightness(4) saturate(0); } 60% { opacity: 1; } 100% { opacity: 1; filter: brightness(1) saturate(1); } }
+  @keyframes kb1 { from { transform: scale(1)    translate(0,0); }    to { transform: scale(1.12) translate(-2%, -1%); } }
+  @keyframes kb2 { from { transform: scale(1.12) translate(2%, 1%); } to { transform: scale(1)    translate(0,0); } }
+  @keyframes kb3 { from { transform: scale(1.05) translate(-2%, 0); } to { transform: scale(1.1)  translate(2%, -1%); } }
   @keyframes capIn {
     from { opacity: 0; transform: translateY(20px); letter-spacing: .3em; filter: blur(8px); }
     to   { opacity: 1; transform: translateY(0);    letter-spacing: 0;    filter: blur(0); }
   }
-
-  /* transitions — each slide gets one of these on enter */
-  .slide.active { opacity: 1; z-index: 2; }
-  .slide.leaving { z-index: 1; opacity: 1; animation: fadeOut 1.8s ease forwards; }
-  @keyframes fadeOut { to { opacity: 0; } }
-
-  .fx-fade.active       { animation: fadeIn 2s ease both; }
-  .fx-blur.active       { animation: blurIn 2.2s ease both; }
-  .fx-circle.active     { animation: circleIn 2.2s cubic-bezier(.6,0,.2,1) both; }
-  .fx-curtain.active    { animation: curtainIn 2s cubic-bezier(.7,0,.2,1) both; }
-  .fx-zoom.active       { animation: zoomIn 2.2s cubic-bezier(.2,.7,.2,1) both; }
-  .fx-light.active      { animation: lightIn 2.4s ease both; }
-  @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes blurIn    { from { opacity: 0; filter: blur(25px) brightness(1.6); } to { opacity: 1; filter: blur(0) brightness(1); } }
-  @keyframes circleIn  { from { clip-path: circle(0% at 50% 50%); } to { clip-path: circle(80% at 50% 50%); } }
-  @keyframes curtainIn { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
-  @keyframes zoomIn    { from { opacity: 0; transform: scale(1.35) rotate(2deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
-  @keyframes lightIn   { 0% { opacity: 0; filter: brightness(4) saturate(0); } 60% { opacity: 1; } 100% { filter: brightness(1) saturate(1); } }
-
-  /* Ken Burns on the photo itself */
-  .slide.active img { animation: var(--kb) var(--dur) linear both; }
-  @keyframes kb1 { from { transform: scale(1)    translate(0,0); }        to { transform: scale(1.12) translate(-2%, -1%); } }
-  @keyframes kb2 { from { transform: scale(1.12) translate(2%, 1%); }     to { transform: scale(1)    translate(0,0); } }
-  @keyframes kb3 { from { transform: scale(1.05) translate(-2%, 0); }     to { transform: scale(1.1)  translate(2%, -1%); } }
 
   /* ---------- finale ---------- */
   #finale {
     position: fixed; inset: 0; z-index: 4;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
     text-align: center; padding: 16px;
-    opacity: 0; pointer-events: none; transition: opacity 2s ease;
+    background: radial-gradient(ellipse at 50% 30%, var(--bg2), var(--bg1) 70%) var(--bg1);
+    opacity: 0; visibility: hidden;
   }
-  #finale.on { opacity: 1; pointer-events: auto; }
+  #open:checked ~ #finale {
+    opacity: 1; visibility: visible;
+    transition: opacity 2s ease calc(var(--intro) + var(--n) * var(--d)), visibility 0s calc(var(--intro) + var(--n) * var(--d));
+  }
   #finale h1 {
-    font-family: 'Suez One', serif;
+    font-family: 'Suez One', 'Arial Hebrew', serif;
     font-size: clamp(34px, 10vw, 72px);
+    color: var(--gold);
     background: linear-gradient(90deg, var(--gold), #fff3d6, var(--gold));
     background-size: 200% auto;
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     animation: shine 4s linear infinite;
   }
-  #finale p { font-size: clamp(16px, 4.4vw, 22px); line-height: 1.7; max-width: 560px; color: #fbe3e8; white-space: pre-line; }
+  #finale p { font-size: clamp(16px, 4.4vw, 22px); line-height: 1.7; max-width: 560px; color: #fbe3e8; }
   @keyframes shine { to { background-position: 200% center; } }
   .btn {
-    font-family: 'Rubik'; font-size: 16px; color: var(--paper);
+    font-family: 'Rubik', Arial, sans-serif; font-size: 16px; color: var(--paper);
     background: rgba(255,255,255,.08); border: 1px solid rgba(233,194,122,.6);
     padding: 10px 22px; border-radius: 999px; cursor: pointer;
   }
   .btn:hover { background: rgba(255,255,255,.16); }
 
-  /* ---------- music controls ---------- */
-  #ytWrap { position: fixed; width: 200px; height: 200px; left: -9999px; top: 0; opacity: 0; pointer-events: none; }
+  /* ---------- music controls (JS) ---------- */
   #musicBtn {
     position: fixed; z-index: 10; top: max(14px, env(safe-area-inset-top)); left: 14px;
     width: 44px; height: 44px; border-radius: 50%;
@@ -273,94 +262,77 @@
     position: fixed; z-index: 11; left: 50%; top: 18px; transform: translateX(-50%);
     display: none; white-space: nowrap;
   }
+  .noscript {
+    position: fixed; z-index: 20; left: 16px; right: 16px; bottom: 16px;
+    text-align: center; font-size: 14px; color: #f5d9df; opacity: .8;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .envelope, .hint { animation: none; }
-    .slide.active img { animation: none; }
+    #open:checked ~ #show .slide .photo { animation: none; }
   }
 </style>
 </head>
 <body>
 
 <div id="hearts"></div>
+<input type="checkbox" id="open" aria-label="פתחי את המעטפה">
 
 <!-- Envelope -->
 <section id="envelopeScene">
-  <div class="hint" id="hint">יש לך מכתב 💌<small>הרימי את המדבקה כדי לפתוח</small></div>
-  <div class="envelope" id="envelope">
+  <div class="hint">יש לך מכתב 💌<small>הרימי את המדבקה כדי לפתוח</small></div>
+  <div class="envelope">
     <div class="env-back"></div>
     <div class="letter">
-      <h2 id="letterTitle"></h2>
-      <p id="letterText"></p>
+      <h2>יום נישואין שמח</h2>
+      <p>לאישה הכי יפה בעולם ❤</p>
     </div>
     <div class="env-front"></div>
     <div class="flap"></div>
-    <div class="seal" id="seal" role="button" aria-label="פתחי את המעטפה" tabindex="0"><span>❤</span></div>
+    <label class="seal" id="seal" for="open"><span>❤</span></label>
   </div>
 </section>
 
-<!-- Slideshow -->
-<section id="show"></section>
+<!-- Slideshow: order here = order on screen. --i counts from 0. -->
+<section id="show">
+  <div class="slide" style="--i:0;  --fx:fadeIn;    --kb:kb1; --src:url('photos/1.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">איפה שהכל התחיל</div></div>
+  <div class="slide" style="--i:1;  --fx:circleIn;  --kb:kb2; --src:url('photos/2.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">מחובקים, תמיד</div></div>
+  <div class="slide" style="--i:2;  --fx:blurIn;    --kb:kb3; --src:url('photos/3.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">הפרצופים שלך 😘</div></div>
+  <div class="slide" style="--i:3;  --fx:zoomIn;    --kb:kb1; --src:url('photos/4.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">כל רגע קטן איתך</div></div>
+  <div class="slide" style="--i:4;  --fx:curtainIn; --kb:kb2; --src:url('photos/11.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">בלי פילטרים 😜</div></div>
+  <div class="slide" style="--i:5;  --fx:lightIn;   --kb:kb3; --src:url('photos/5.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">הלילות שלנו</div></div>
+  <div class="slide" style="--i:6;  --fx:fadeIn;    --kb:kb1; --src:url('photos/12.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">הבית שלנו</div></div>
+  <div class="slide" style="--i:7;  --fx:circleIn;  --kb:kb2; --src:url('photos/13.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">ממריאים יחד ✈</div></div>
+  <div class="slide" style="--i:8;  --fx:blurIn;    --kb:kb3; --src:url('photos/8.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">את והטבעת 💍</div></div>
+  <div class="slide" style="--i:9;  --fx:zoomIn;    --kb:kb1; --src:url('photos/10.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">פראג, רק את ואני</div></div>
+  <div class="slide" style="--i:10; --fx:curtainIn; --kb:kb2; --src:url('photos/7.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">נשיקה ממך</div></div>
+  <div class="slide" style="--i:11; --fx:lightIn;   --kb:kb3; --src:url('photos/6.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">יחד, בכל שמחה</div></div>
+  <div class="slide" style="--i:12; --fx:fadeIn;    --kb:kb1; --src:url('photos/9.jpg')"><div class="bg"></div><div class="photo" role="img"></div><div class="vignette"></div><div class="caption">והמשפחה שבנינו ❤</div></div>
+</section>
 
 <!-- Finale -->
 <section id="finale">
-  <h1 id="finaleTitle"></h1>
-  <p id="finaleText"></p>
-  <button class="btn" id="replay">לצפות שוב ↺</button>
+  <h1>אני אוהב אותך</h1>
+  <p>תודה רבה על האמונה והגב שאת נותנת לי.<br>אני אוהב אותך הכי בעולם ❤<br><br>יום נישואין שמח</p>
+  <label class="btn" for="open">לצפות שוב ↺</label>
 </section>
 
-<!-- Hidden YouTube player -->
-<div id="ytWrap"><div id="yt"></div></div>
 <button id="musicBtn" aria-label="השתק / הפעל מוזיקה">🔊</button>
 <button class="btn" id="tapMusic">🎵 לחצי להפעלת המוזיקה</button>
+<noscript><div class="noscript">כדי לשמוע את השיר, פתחי את הקובץ בדפדפן כרום או ספארי</div></noscript>
 
 <script>
-/* =========================================================
-   ✏️ CONFIG — כאן עורכים הכל
-   ========================================================= */
+/* ✏️ המוזיקה */
 const CONFIG = {
-  // השיר: בר צברי - ככה באמת
-  youtubeId: 'Ze63vfpYAV4',
-  // אם הסרטון הראשי חסום להטמעה — ינסה את אלה לפי הסדר
-  youtubeFallbackIds: ['c_rx1efu52w'],
-  // אופציה אמינה יותר: שים קובץ mp3 של השיר בתיקייה (למשל 'song.mp3') וכתוב את השם כאן.
-  // אם מוגדר — הוא ינוגן במקום יוטיוב.
-  audioFile: 'song.mp3',
-  musicStartSeconds: 0,          // מאיזו שנייה בשיר להתחיל
-  secondsPerPhoto: 4.5,          // 13 תמונות × 4.5 שניות ≈ אורך השיר (71 שניות)
-
-  letterTitle: 'יום נישואין שמח',
-  letterText: 'לאישה הכי יפה בעולם ❤',
-
-  // התמונות: שימו את הקבצים בתיקייה photos/ ועדכנו כאן את השמות והכיתובים
-  photos: [   // סדר ההצגה = הסדר כאן
-    { src: 'photos/1.jpg',  caption: 'איפה שהכל התחיל' },
-    { src: 'photos/2.jpg',  caption: 'מחובקים, תמיד' },
-    { src: 'photos/3.jpg',  caption: 'הפרצופים שלך 😘' },
-    { src: 'photos/4.jpg',  caption: 'כל רגע קטן איתך' },
-    { src: 'photos/11.jpg', caption: 'בלי פילטרים 😜' },
-    { src: 'photos/5.jpg',  caption: 'הלילות שלנו' },
-    { src: 'photos/12.jpg', caption: 'הבית שלנו' },
-    { src: 'photos/13.jpg', caption: 'ממריאים יחד ✈' },
-    { src: 'photos/8.jpg',  caption: 'את והטבעת 💍' },
-    { src: 'photos/10.jpg', caption: 'פראג, רק את ואני' },
-    { src: 'photos/7.jpg',  caption: 'נשיקה ממך' },
-    { src: 'photos/6.jpg',  caption: 'יחד, בכל שמחה' },
-    { src: 'photos/9.jpg',  caption: 'והמשפחה שבנינו ❤' },
-  ],
-
-  finaleTitle: 'אני אוהב אותך',
-  finaleText: 'תודה רבה על האמונה והגב שאת נותנת לי.\nאני אוהב אותך הכי בעולם ❤\n\nיום נישואין שמח',
+  audioFile: 'song.mp3',     // השיר: בר צברי - ככה באמת
+  musicStartSeconds: 0,
 };
 </script>
 
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  $('letterTitle').textContent = CONFIG.letterTitle;
-  $('letterText').textContent  = CONFIG.letterText;
-  $('finaleTitle').textContent = CONFIG.finaleTitle;
-  $('finaleText').textContent  = CONFIG.finaleText;
+  const open = $('open'), seal = $('seal');
 
   /* ---------- floating hearts ---------- */
   const heartsEl = $('hearts');
@@ -378,161 +350,62 @@ const CONFIG = {
   }
   (function loop() { spawnHeart(); setTimeout(loop, heartRate * (.5 + Math.random())); })();
 
-  /* ---------- YouTube player (created on load so play() runs inside the tap) ---------- */
-  const fallbacks = [...(CONFIG.youtubeFallbackIds || [])];
-  let player, playerReady = false, wantPlay = false, muted = false;
-  window.onYouTubeIframeAPIReady = () => {
-    player = new YT.Player('yt', {
-      width: 200, height: 200, videoId: CONFIG.youtubeId,
-      playerVars: { playsinline: 1, controls: 0, start: CONFIG.musicStartSeconds, rel: 0 },
-      events: {
-        onReady: () => { playerReady = true; if (wantPlay) playMusic(); },
-        // 2/5/100/101/150: invalid, unavailable or embedding disabled → try the next song
-        onError: () => {
-          const nextId = fallbacks.shift();
-          if (!nextId) return;
-          wantPlay ? player.loadVideoById(nextId, CONFIG.musicStartSeconds)
-                   : player.cueVideoById(nextId, CONFIG.musicStartSeconds);
-        },
-        onStateChange: e => {
-          if (e.data === YT.PlayerState.PLAYING) { $('tapMusic').style.display = 'none'; $('musicBtn').style.display = 'block'; }
-          if (e.data === YT.PlayerState.ENDED) { player.seekTo(CONFIG.musicStartSeconds); player.playVideo(); }
-        },
-      },
-    });
-  };
-  let audio = null;
-  if (CONFIG.audioFile) {
-    audio = new Audio(CONFIG.audioFile);
-    audio.preload = 'auto';
-    audio.currentTime = CONFIG.musicStartSeconds;
-    audio.onplaying = () => { $('tapMusic').style.display = 'none'; $('musicBtn').style.display = 'block'; };
-  } else {
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-  }
-
+  /* ---------- music ---------- */
+  const audio = new Audio(CONFIG.audioFile);
+  audio.preload = 'auto';
+  audio.onplaying = () => { $('tapMusic').style.display = 'none'; $('musicBtn').style.display = 'block'; };
   function playMusic() {
-    wantPlay = true;
-    if (audio) { audio.play().catch(() => {}); return; }
-    if (!playerReady) return;
-    try { player.unMute(); player.setVolume(100); player.playVideo(); } catch (e) {}
+    try { audio.currentTime = CONFIG.musicStartSeconds; } catch (e) {}
+    const p = audio.play();
+    if (p) p.catch(() => {});
+    setTimeout(() => { if (audio.paused && open.checked) $('tapMusic').style.display = 'block'; }, 2500);
   }
-  function isPlaying() {
-    if (audio) return !audio.paused;
-    return playerReady && player.getPlayerState && player.getPlayerState() === YT.PlayerState.PLAYING;
-  }
-  // If the browser blocked autoplay, offer a one-tap fallback
-  function checkMusicLater() {
-    setTimeout(() => {
-      if (!isPlaying()) $('tapMusic').style.display = 'block';
-    }, 2500);
-  }
-  $('tapMusic').onclick = () => { playMusic(); $('tapMusic').style.display = 'none'; };
+  $('tapMusic').onclick = () => { audio.play().catch(() => {}); $('tapMusic').style.display = 'none'; };
   $('musicBtn').onclick = () => {
-    muted = !muted;
-    if (audio) audio.muted = muted;
-    else if (playerReady) muted ? player.mute() : player.unMute();
-    $('musicBtn').textContent = muted ? '🔇' : '🔊';
+    audio.muted = !audio.muted;
+    $('musicBtn').textContent = audio.muted ? '🔇' : '🔊';
   };
 
-  /* ---------- seal: click or drag up to peel ---------- */
-  const seal = $('seal'), envelope = $('envelope');
-  let opened = false, startX = 0, startY = 0, dragging = false;
+  /* checkbox drives everything; this only handles the side effects */
+  open.addEventListener('change', () => {
+    if (open.checked) {
+      playMusic();
+      heartRate = 300;
+      for (let i = 0; i < 25; i++) setTimeout(spawnHeart, i * 40);
+    } else {
+      audio.pause();
+      seal.style.transform = '';
+    }
+  });
 
+  /* ---------- drag the sticker up to peel it (a plain tap works via the <label>) ---------- */
+  let startX = 0, startY = 0, dragging = false, moved = 0;
   seal.addEventListener('pointerdown', e => {
-    if (opened) return;
-    dragging = true; startX = e.clientX; startY = e.clientY;
+    if (open.checked) return;
+    dragging = true; moved = 0; startX = e.clientX; startY = e.clientY;
     seal.classList.add('dragging');
-    seal.setPointerCapture(e.pointerId);
+    try { seal.setPointerCapture(e.pointerId); } catch (err) {}
   });
   seal.addEventListener('pointermove', e => {
     if (!dragging) return;
     const dx = e.clientX - startX, dy = e.clientY - startY;
-    const dist = Math.hypot(dx, dy);
-    seal.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx * .4}deg) scale(${1 + Math.min(dist, 80) / 400})`;
-    if (dist > 70) openEnvelope();
+    moved = Math.hypot(dx, dy);
+    seal.style.transform = `translate(${dx}px, ${dy}px) rotate(${dx * .4}deg) scale(${1 + Math.min(moved, 80) / 400})`;
   });
-  const endDrag = () => {
+  function endDrag() {
     if (!dragging) return;
     dragging = false;
     seal.classList.remove('dragging');
-    openEnvelope(); // a plain tap/click also opens
-  };
+    // A drag may not produce a click on touch screens, so open here (pointerup counts as a user gesture for audio).
+    if (moved > 8 && !open.checked) {
+      open.checked = true;
+      open.dispatchEvent(new Event('change'));
+    }
+  }
   seal.addEventListener('pointerup', endDrag);
   seal.addEventListener('pointercancel', () => { dragging = false; seal.classList.remove('dragging'); seal.style.transform = ''; });
-  seal.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openEnvelope(); });
-
-  function openEnvelope() {
-    if (opened) return;
-    opened = true; dragging = false;
-    playMusic();            // must run inside the user gesture
-    checkMusicLater();
-    seal.classList.remove('dragging');
-    seal.classList.add('peeled');
-    $('hint').style.opacity = 0;
-    envelope.classList.add('opening');
-    setTimeout(() => envelope.classList.add('opened'), 450);
-    heartRate = 250;
-    for (let i = 0; i < 25; i++) setTimeout(spawnHeart, i * 40);
-    setTimeout(() => $('envelopeScene').classList.add('gone'), 4200);
-    setTimeout(startShow, 4600);
-  }
-
-  /* ---------- slideshow ---------- */
-  const FX = ['fx-fade', 'fx-circle', 'fx-blur', 'fx-zoom', 'fx-curtain', 'fx-light'];
-  const KB = ['kb1', 'kb2', 'kb3'];
-  const show = $('show');
-  const slides = CONFIG.photos.map((p, i) => {
-    const s = document.createElement('div');
-    s.className = 'slide';
-    s.innerHTML = `<div class="bg" style="background-image:url('${p.src}')"></div>
-      <img src="${p.src}" alt="" loading="${i < 2 ? 'eager' : 'lazy'}">
-      <div class="vignette"></div><div class="caption"></div>`;
-    s.querySelector('.caption').textContent = p.caption || '';
-    s.querySelector('img').onerror = function () {
-      this.replaceWith(Object.assign(document.createElement('div'), { className: 'fallback', textContent: '❤' }));
-    };
-    s.style.setProperty('--dur', (CONFIG.secondsPerPhoto + 2) + 's');
-    s.style.setProperty('--kb', KB[i % KB.length]);
-    show.appendChild(s);
-    return s;
-  });
-
-  let idx = -1, timer;
-  function startShow() {
-    heartRate = 1400;
-    show.classList.add('on');
-    next();
-  }
-  function next() {
-    const prev = slides[idx];
-    idx++;
-    if (prev) {
-      prev.className = 'slide leaving';
-      setTimeout(() => { if (!prev.classList.contains('active')) prev.className = 'slide'; }, 1900);
-    }
-    if (idx >= slides.length) return finish();
-    const s = slides[idx];
-    s.className = 'slide ' + FX[idx % FX.length];
-    void s.offsetWidth; // restart animations
-    s.classList.add('active');
-    timer = setTimeout(next, CONFIG.secondsPerPhoto * 1000);
-  }
-  function finish() {
-    show.classList.remove('on');
-    $('finale').classList.add('on');
-    heartRate = 300;
-  }
-  $('replay').onclick = () => {
-    clearTimeout(timer);
-    $('finale').classList.remove('on');
-    slides.forEach(s => s.className = 'slide');
-    idx = -1;
-    if (audio) { audio.currentTime = CONFIG.musicStartSeconds; audio.play().catch(() => {}); }
-    setTimeout(startShow, 800);
-  };
+  // The seal only opens; never let a late click close it again.
+  seal.addEventListener('click', e => { if (open.checked) e.preventDefault(); });
 })();
 </script>
 </body>
